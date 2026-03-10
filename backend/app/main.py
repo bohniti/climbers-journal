@@ -1,9 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.config import get_settings
-from app.routers import activities, chat
+from app.dependencies import get_current_user
+from app.routers import activities, chat, auth
 from app.routers import routes as routes_router
 from app.routers import import_router, stats
 
@@ -30,11 +31,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(activities.router)
-app.include_router(chat.router)
-app.include_router(routes_router.router)
-app.include_router(import_router.router)
-app.include_router(stats.router)
+# Public routes
+app.include_router(auth.router)
+
+# Protected routes — require valid JWT
+_auth = [Depends(get_current_user)]
+app.include_router(activities.router, dependencies=_auth)
+app.include_router(chat.router, dependencies=_auth)
+app.include_router(routes_router.router, dependencies=_auth)
+app.include_router(import_router.router, dependencies=_auth)
+app.include_router(stats.router, dependencies=_auth)
 
 
 @app.get("/health")

@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     # Brave Search
     brave_api_key: str = ""
 
+    # Auth
+    app_username: str = "admin"
+    app_password: str = ""
+    jwt_secret: str = "change-me-in-production"
+    jwt_expire_days: int = 30
+
     # App
     backend_url: str = "http://localhost:8000"
     cors_origins: list[str] = ["http://localhost:3000"]

@@ -107,13 +107,37 @@ export interface ImportResult {
   errors: string[];
 }
 
+// ─── Auth types ────────────────────────────────────────────────────────────
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+}
+
 // ─── HTTP helper ───────────────────────────────────────────────────────────
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
   const res = await fetch(`${BACKEND}${path}`, {
-    headers: { "Content-Type": "application/json" },
+    headers,
     ...init,
   });
+
+  if (res.status === 401 && typeof window !== "undefined" && !path.startsWith("/auth/")) {
+    localStorage.removeItem("auth_token");
+    document.cookie = "auth_token=; path=/; max-age=0";
+    window.location.href = "/login";
+    throw new Error("Unauthorised");
+  }
+
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`${res.status}: ${text}`);
@@ -124,6 +148,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 // ─── API client ────────────────────────────────────────────────────────────
 
 export const api = {
+  auth: {
+    login: (data: LoginRequest) =>
+      request<TokenResponse>("/auth/login", { method: "POST", body: JSON.stringify(data) }),
+  },
+
   activities: {
     list: (params?: { activity_type?: string; limit?: number }) => {
       const qs = params

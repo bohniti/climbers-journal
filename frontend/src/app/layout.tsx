@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import LogoutButton from "@/components/LogoutButton";
 
 export const metadata: Metadata = {
   title: "Climbers Journal",
@@ -27,6 +28,7 @@ export default function RootLayout({
           <a href="/chat" className="text-sm text-slate-400 hover:text-slate-100 transition-colors">
             Log Activity
           </a>
+          <LogoutButton />
         </nav>
         <main className="max-w-6xl mx-auto px-6 py-8">{children}</main>
       </body>

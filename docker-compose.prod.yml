@@ -24,6 +24,9 @@ services:
       INTERVALS_ICU_ATHLETE_ID: ${INTERVALS_ICU_ATHLETE_ID}
       INTERVALS_ICU_API_KEY: ${INTERVALS_ICU_API_KEY}
       BRAVE_API_KEY: ${BRAVE_API_KEY}
+      APP_USERNAME: ${APP_USERNAME:-admin}
+      APP_PASSWORD: ${APP_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGINS: '["https://tbohnstedt.cloud"]'
     depends_on:
       postgres:
