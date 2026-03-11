@@ -22,12 +22,24 @@ export default function MapPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(0);
 
-  // ── 1. Load activities ────────────────────────────────────────────────────
+  // ── 1. Load ALL activities (paginate in batches of 1000) ─────────────────
   useEffect(() => {
-    api.activities
-      .list({ limit: 200 })
-      .then(setActivities)
-      .catch((e: Error) => setLoadError(e.message));
+    (async () => {
+      try {
+        const all: Activity[] = [];
+        let offset = 0;
+        const BATCH = 1000;
+        while (true) {
+          const batch = await api.activities.list({ limit: BATCH, offset });
+          all.push(...batch);
+          if (batch.length < BATCH) break;
+          offset += BATCH;
+        }
+        setActivities(all);
+      } catch (e) {
+        setLoadError((e as Error).message);
+      }
+    })();
   }, []);
 
   // ── 2. Init map (once, client-side only) ─────────────────────────────────
@@ -60,7 +72,7 @@ export default function MapPage() {
 
       // Mapy.com outdoor tiles — great for climbing (terrain, trails, crags)
       L.tileLayer(
-        `https://api.mapy.com/v1/maptiles/outdoor/256/{z}/{x}/{y}?apikey=${apiKey}`,
+        `https://api.mapy.com/v1/maptiles/outdoor/256/{z}/{x}/{y}?apikey=${apiKey}&lang=en`,
         {
           maxZoom: 19,
           attribution:

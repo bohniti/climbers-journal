@@ -27,7 +27,7 @@ async def list_regions(session: AsyncSession = Depends(get_session)):
 async def list_activities(
     activity_type: Optional[ActivityType] = Query(None),
     region: Optional[str] = Query(None, description="Filter by region, e.g. 'Fränkische Schweiz'"),
-    limit: int = Query(50, le=200),
+    limit: int = Query(50, le=2000),
     offset: int = Query(0),
     session: AsyncSession = Depends(get_session),
 ):

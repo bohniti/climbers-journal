@@ -185,7 +185,7 @@ export const api = {
   },
 
   activities: {
-    list: (params?: { activity_type?: string; region?: string; limit?: number }) => {
+    list: (params?: { activity_type?: string; region?: string; limit?: number; offset?: number }) => {
       const qs = params
         ? "?" + new URLSearchParams(
             Object.entries(params)
