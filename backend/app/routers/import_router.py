@@ -22,12 +22,13 @@ router = APIRouter(tags=["import"])
 # Maps crag/gym name (location column) → human-readable region for filtering
 
 _LOCATION_REGION: dict[str, str] = {
-    # ── Vienna gyms ──────────────────────────────────────────────────────────
-    "Kletterhalle Wien":        "Kletterhalle Wien",
-    "Kletteranlage Flakturm":   "Kletterhalle Wien",
-    "Edelweiss Südstadt":       "Kletterhalle Wien",
-    "Blockfabrik":              "Kletterhalle Wien",
-    "Cube Kletterzentrum":      "Kletterhalle Wien",
+    # ── Vienna gyms — all grouped under "Wien" ───────────────────────────────
+    "Kletterhalle Wien":        "Wien",
+    "Kletteranlage Flakturm":   "Wien",
+    "Edelweiss Südstadt":       "Wien",
+    "Edelweiß Südstadt":        "Wien",
+    "Blockfabrik":              "Wien",
+    "Cube Kletterzentrum":      "Wien",
     # ── Austria — Hohe Wand / Niederösterreich ───────────────────────────────
     "Hohe Wand":                "Hohe Wand",
     "Johannesbachklamm":        "Hohe Wand",
@@ -71,7 +72,7 @@ def _resolve_region(location: str, route_type: str) -> str:
     if location in _LOCATION_REGION:
         return _LOCATION_REGION[location]
     if "GYM" in route_type.upper():
-        return location  # unknown gym → use gym name as its own region
+        return "Wien"  # unknown gym → assume Vienna (all known gyms in data are Vienna)
     return _FRANKEN_DEFAULT
 
 
