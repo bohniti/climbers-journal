@@ -1,12 +1,18 @@
+from pathlib import Path
 from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from datetime import datetime
 
+from app.config import get_settings
 from app.database import get_session
 from app.models.activity import Activity, ActivityCreate, ActivityUpdate, ActivityOut, ActivityType
+from app.models.photo import ActivityPhoto
 from app.models.route import SessionRoute, SessionRouteCreate
+
+settings = get_settings()
 
 router = APIRouter(prefix="/activities", tags=["activities"])
 
@@ -108,5 +114,14 @@ async def delete_activity(
     activity = await session.get(Activity, activity_id)
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
+
+    # Clean up photo files from disk (DB rows cascade via FK)
+    photos_result = await session.execute(
+        select(ActivityPhoto).where(ActivityPhoto.activity_id == activity_id)
+    )
+    for photo in photos_result.scalars().all():
+        file_path = Path(settings.photo_storage_path) / str(activity_id) / photo.filename
+        file_path.unlink(missing_ok=True)
+
     await session.delete(activity)
     await session.commit()

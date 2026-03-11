@@ -121,6 +121,34 @@ export interface BlogCsvImportResult {
   errors: string[];
 }
 
+// ─── Photo types ──────────────────────────────────────────────────────
+
+export interface ActivityPhoto {
+  id: number;
+  activity_id: number;
+  filename: string;
+  original_name: string;
+  content_type: string;
+  size_bytes: number;
+  exif_lat?: number;
+  exif_lon?: number;
+  exif_date?: string;
+  created_at: string;
+}
+
+// ─── Refine types ─────────────────────────────────────────────────────
+
+export interface RefineSuggestion {
+  field: string;
+  current_value: unknown;
+  suggested_value: unknown;
+}
+
+export interface RefineResponse {
+  suggestions: RefineSuggestion[];
+  explanation: string;
+}
+
 // ─── Auth types ────────────────────────────────────────────────────────────
 
 export interface LoginRequest {
@@ -249,6 +277,52 @@ export const api = {
         body: form,
       }).then((r) => r.json() as Promise<BlogCsvImportResult>);
     },
+  },
+
+  photos: {
+    list: (activityId: number) =>
+      request<ActivityPhoto[]>(`/activities/${activityId}/photos`),
+
+    upload: (activityId: number, files: FileList | File[]) => {
+      const form = new FormData();
+      Array.from(files).forEach((f) => form.append("files", f));
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("auth_token") || null
+          : null;
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      return fetch(`${BACKEND}/activities/${activityId}/photos`, {
+        method: "POST",
+        headers,
+        body: form,
+      }).then((r) => {
+        if (!r.ok) throw new Error(`Upload failed: ${r.status}`);
+        return r.json() as Promise<ActivityPhoto[]>;
+      });
+    },
+
+    fileUrl: (photoId: number) => `${BACKEND}/photos/${photoId}/file`,
+
+    delete: (photoId: number) => {
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("auth_token") || null
+          : null;
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      return fetch(`${BACKEND}/photos/${photoId}`, {
+        method: "DELETE",
+        headers,
+      });
+    },
+  },
+
+  refine: {
+    suggest: (activityId: number) =>
+      request<RefineResponse>(`/activities/${activityId}/refine`, {
+        method: "POST",
+      }),
   },
 
   chat: (messages: ChatMessage[], location_context?: string) =>

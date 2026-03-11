@@ -11,6 +11,7 @@ from sqlmodel import SQLModel
 # Import all models so metadata is populated
 from app.models.activity import Activity  # noqa: F401
 from app.models.route import SessionRoute  # noqa: F401
+from app.models.photo import ActivityPhoto  # noqa: F401
 
 config = context.config
 

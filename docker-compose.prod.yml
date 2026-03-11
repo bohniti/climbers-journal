@@ -16,6 +16,8 @@ services:
 
   backend:
     image: ghcr.io/${GITHUB_REPOSITORY}-backend:latest
+    volumes:
+      - photo_uploads:/app/uploads/photos
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-journal}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-journal}
       NVIDIA_API_KEY: ${NVIDIA_API_KEY}
@@ -24,6 +26,7 @@ services:
       INTERVALS_ICU_ATHLETE_ID: ${INTERVALS_ICU_ATHLETE_ID}
       INTERVALS_ICU_API_KEY: ${INTERVALS_ICU_API_KEY}
       BRAVE_API_KEY: ${BRAVE_API_KEY}
+      MAPY_API_KEY: ${MAPY_API_KEY}
       APP_USERNAME: ${APP_USERNAME:-admin}
       APP_PASSWORD: ${APP_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
@@ -102,6 +105,7 @@ services:
 
 volumes:
   pgdata:
+  photo_uploads:
   loki_data:
   grafana_data:
   phoenix_data:

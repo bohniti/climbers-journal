@@ -22,6 +22,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - photo_uploads:/app/uploads/photos
     environment:
       DATABASE_URL: postgresql+asyncpg://journal:journal@postgres:5432/journal
       NVIDIA_API_KEY: ${NVIDIA_API_KEY}
@@ -30,6 +31,7 @@ services:
       INTERVALS_ICU_API_KEY: ${INTERVALS_ICU_API_KEY}
       INTERVALS_ICU_ATHLETE_ID: ${INTERVALS_ICU_ATHLETE_ID}
       BRAVE_API_KEY: ${BRAVE_API_KEY:-}
+      MAPY_API_KEY: ${MAPY_API_KEY:-}
       CORS_ORIGINS: '["http://localhost:3000"]'
       DEBUG: "true"
     depends_on:
@@ -54,3 +56,4 @@ services:
 
 volumes:
   pgdata:
+  photo_uploads:

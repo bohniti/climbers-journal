@@ -26,6 +26,12 @@ class Settings(BaseSettings):
     jwt_secret: str = "change-me-in-production"
     jwt_expire_days: int = 30
 
+    # Photo storage
+    photo_storage_path: str = "/app/uploads/photos"
+
+    # Mapy.com
+    mapy_api_key: str = ""
+
     # App
     backend_url: str = "http://localhost:8000"
     cors_origins: list[str] = ["http://localhost:3000"]
