@@ -372,6 +372,6 @@ export const ACTIVITY_TYPE_TAGS: Record<ActivityType, string[]> = {
   multi_pitch: ["bolted", "trad", "alpine"],
   cycling: ["commute", "road_bike", "gravel_bike", "mtb", "indoor"],
   hiking: ["alpine"],
-  fitness: ["run", "trail_run", "swim", "gym", "yoga"],
-  other: [],
+  fitness: ["gym", "yoga"],
+  other: ["run", "trail_run", "swim"],
 };

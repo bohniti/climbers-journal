@@ -55,10 +55,11 @@ SYSTEM_PROMPT = """You are an outdoor activities journal assistant. You help the
 ### `hiking`
 - No required tags; optionally `alpine` for high-mountain approaches
 
-### `fitness` — gym, running, yoga, etc.
-- Tags: `run`, `trail_run`, `swim`, `gym`, `yoga`, etc.
+### `fitness` — gym sessions, yoga, general strength/conditioning
+- Tags: `gym`, `yoga`, etc.
 
-### `other` — anything that doesn't fit above
+### `other` — anything that doesn't fit above, including running and swimming
+- Tags: `run`, `trail_run`, `swim`, etc.
 
 ## Routes for climbing sessions:
 
@@ -169,14 +170,14 @@ RECORD_ACTIVITY_TOOL = {
                 "activity_type": {
                     "type": "string",
                     "enum": ["bouldering", "sport_climb", "multi_pitch", "cycling", "hiking", "fitness", "other"],
-                    "description": "bouldering=no rope; sport_climb=bolted/single-pitch; multi_pitch=2+ pitches; cycling; hiking; fitness=gym/run/swim; other",
+                    "description": "bouldering=no rope; sport_climb=bolted/single-pitch; multi_pitch=2+ pitches; cycling; hiking; fitness=gym/yoga/strength; other=run/trail_run/swim/anything else",
                 },
                 "title": {"type": "string", "description": "Short descriptive title for the session"},
                 "date": {"type": "string", "format": "date-time"},
                 "tags": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Sub-category tags. bouldering/sport_climb: indoor|outdoor. multi_pitch: trad|bolted|alpine. cycling: commute|road_bike|gravel_bike|mtb|indoor. fitness: run|trail_run|swim|gym|yoga. Leave empty if unsure.",
+                    "description": "Sub-category tags. bouldering/sport_climb: indoor|outdoor. multi_pitch: trad|bolted|alpine. cycling: commute|road_bike|gravel_bike|mtb|indoor. fitness: gym|yoga. other: run|trail_run|swim. Leave empty if unsure.",
                 },
                 "duration_minutes": {"type": "integer"},
                 "distance_km": {"type": "number"},
