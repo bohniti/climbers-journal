@@ -138,6 +138,36 @@ export interface ActivityPhoto {
   created_at: string;
 }
 
+// ─── Coach types ──────────────────────────────────────────────────────
+
+export interface CoachImageData {
+  content_type: string;
+  data: string; // base64
+}
+
+export interface PendingUpdate {
+  activity_id: number;
+  changes: Record<string, unknown>;
+  current_values: Record<string, unknown>;
+}
+
+export interface CoachResponse {
+  reply: string;
+  pending_activity?: Partial<Activity> & { routes?: SessionRouteCreate[] };
+  needs_confirmation: boolean;
+  pending_update?: PendingUpdate;
+  found_activities?: Array<{
+    id: number;
+    title: string;
+    activity_type: ActivityType;
+    date: string;
+    area?: string;
+    region?: string;
+    duration_minutes?: number;
+    tags: string[];
+  }>;
+}
+
 // ─── Refine types ─────────────────────────────────────────────────────
 
 export interface RefineSuggestion {
@@ -331,6 +361,16 @@ export const api = {
     request<ChatResponse>("/chat/", {
       method: "POST",
       body: JSON.stringify({ messages, location_context }),
+    }),
+
+  coach: (
+    messages: ChatMessage[],
+    images: CoachImageData[] = [],
+    location_context?: string,
+  ) =>
+    request<CoachResponse>("/coach/", {
+      method: "POST",
+      body: JSON.stringify({ messages, images, location_context }),
     }),
 };
 

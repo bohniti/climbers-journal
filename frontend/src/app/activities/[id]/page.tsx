@@ -10,8 +10,6 @@ import {
   SessionRouteCreate,
   GradeSystem,
   ClimbStyle,
-  RefineSuggestion,
-  RefineResponse,
   ACTIVITY_TYPE_LABELS,
   ACTIVITY_TYPE_COLORS,
   ACTIVITY_TYPE_TAGS,
@@ -531,11 +529,6 @@ export default function ActivityDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [addingRoute, setAddingRoute] = useState(false);
 
-  // AI refinement state
-  const [refining, setRefining] = useState(false);
-  const [refineSuggestions, setRefineSuggestions] = useState<RefineResponse | null>(null);
-  const [selectedSuggestions, setSelectedSuggestions] = useState<Set<string>>(new Set());
-  const [acceptingSuggestions, setAcceptingSuggestions] = useState(false);
 
   useEffect(() => {
     const numId = Number(id);
@@ -557,39 +550,6 @@ export default function ActivityDetailPage() {
     setDeleting(true);
     await api.activities.delete(Number(id));
     router.push("/activities");
-  };
-
-  const handleRefine = async () => {
-    setRefining(true);
-    try {
-      const result = await api.refine.suggest(Number(id));
-      setRefineSuggestions(result);
-      setSelectedSuggestions(new Set(result.suggestions.map((s) => s.field)));
-    } catch (e) {
-      console.error("Refine failed:", e);
-    } finally {
-      setRefining(false);
-    }
-  };
-
-  const handleAcceptSuggestions = async () => {
-    if (!refineSuggestions || !activity) return;
-    setAcceptingSuggestions(true);
-    try {
-      const updates: Record<string, unknown> = {};
-      for (const s of refineSuggestions.suggestions) {
-        if (selectedSuggestions.has(s.field)) {
-          updates[s.field] = s.suggested_value;
-        }
-      }
-      const updated = await api.activities.update(activity.id, updates as Partial<Activity>);
-      setActivity(updated);
-      setRefineSuggestions(null);
-    } catch (e) {
-      console.error("Accept suggestions failed:", e);
-    } finally {
-      setAcceptingSuggestions(false);
-    }
   };
 
   if (loading) return <div className="text-slate-400 p-4">Loading…</div>;
@@ -642,13 +602,12 @@ export default function ActivityDetailPage() {
 
         {!editing && (
           <div className="flex gap-2 shrink-0">
-            <button
-              onClick={handleRefine}
-              disabled={refining}
-              className="px-3 py-1.5 rounded-lg border border-purple-800 hover:border-purple-600 text-sm text-purple-400 hover:text-purple-300 transition-colors disabled:opacity-50"
+            <Link
+              href={`/coach?activity=${id}`}
+              className="px-3 py-1.5 rounded-lg border border-purple-800 hover:border-purple-600 text-sm text-purple-400 hover:text-purple-300 transition-colors"
             >
-              {refining ? "Refining…" : "✨ Refine with AI"}
-            </button>
+              Ask Coach
+            </Link>
             <button
               onClick={() => setEditing(true)}
               className="px-3 py-1.5 rounded-lg border border-slate-700 hover:border-slate-500 text-sm text-slate-300 hover:text-slate-100 transition-colors"
@@ -683,62 +642,6 @@ export default function ActivityDetailPage() {
           </div>
         )}
       </div>
-
-      {/* AI Refinement suggestions */}
-      {refineSuggestions && refineSuggestions.suggestions.length > 0 && (
-        <div className="mb-6 p-4 rounded-xl border border-purple-800/50 bg-purple-950/20">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-sm font-medium text-purple-300">✨ AI Suggestions</span>
-          </div>
-          {refineSuggestions.explanation && (
-            <p className="text-xs text-slate-400 mb-3">{refineSuggestions.explanation}</p>
-          )}
-          <div className="space-y-2 mb-4">
-            {refineSuggestions.suggestions.map((s) => (
-              <label key={s.field} className="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-800/50 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={selectedSuggestions.has(s.field)}
-                  onChange={() => {
-                    setSelectedSuggestions((prev) => {
-                      const next = new Set(prev);
-                      if (next.has(s.field)) next.delete(s.field);
-                      else next.add(s.field);
-                      return next;
-                    });
-                  }}
-                  className="mt-1 accent-purple-500"
-                />
-                <div className="flex-1 min-w-0">
-                  <span className="text-xs font-medium text-slate-400 uppercase">{s.field}</span>
-                  <div className="flex items-center gap-2 mt-0.5 text-sm">
-                    <span className="text-red-400/70 line-through truncate">
-                      {s.current_value != null ? String(s.current_value) : "(empty)"}
-                    </span>
-                    <span className="text-slate-600">→</span>
-                    <span className="text-emerald-400 truncate">{String(s.suggested_value)}</span>
-                  </div>
-                </div>
-              </label>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleAcceptSuggestions}
-              disabled={acceptingSuggestions || selectedSuggestions.size === 0}
-              className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-xs text-white rounded-lg transition-colors"
-            >
-              {acceptingSuggestions ? "Applying…" : `Accept ${selectedSuggestions.size} suggestion${selectedSuggestions.size !== 1 ? "s" : ""}`}
-            </button>
-            <button
-              onClick={() => setRefineSuggestions(null)}
-              className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-xs text-slate-200 rounded-lg transition-colors"
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* View or Edit */}
       {editing ? (
