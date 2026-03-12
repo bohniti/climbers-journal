@@ -28,8 +28,8 @@ export default function RootLayout({
           <a href="/map" className="text-sm text-slate-400 hover:text-slate-100 transition-colors">
             Map
           </a>
-          <a href="/chat" className="text-sm text-slate-400 hover:text-slate-100 transition-colors">
-            Log Activity
+          <a href="/coach" className="text-sm text-slate-400 hover:text-slate-100 transition-colors">
+            Coach
           </a>
           <LogoutButton />
         </nav>

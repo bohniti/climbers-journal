@@ -8,7 +8,7 @@ from app.config import get_settings
 from app.dependencies import get_current_user
 from app.routers import activities, chat, auth
 from app.routers import routes as routes_router
-from app.routers import import_router, stats, photos, refine
+from app.routers import import_router, stats, photos, refine, coach
 
 log = logging.getLogger(__name__)
 settings = get_settings()
@@ -66,6 +66,7 @@ app.include_router(import_router.router, dependencies=_auth)
 app.include_router(stats.router, dependencies=_auth)
 app.include_router(photos.router, dependencies=_auth)
 app.include_router(refine.router, dependencies=_auth)
+app.include_router(coach.router, dependencies=_auth)
 
 
 @app.get("/health")
