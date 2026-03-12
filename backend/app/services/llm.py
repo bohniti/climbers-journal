@@ -187,6 +187,8 @@ RECORD_ACTIVITY_TOOL = {
                 "lon": {"type": "number"},
                 "area": {"type": "string", "description": "Specific climbing area or crag name, e.g. 'Hexenküche', 'Kletterhalle Wien'"},
                 "region": {"type": "string", "description": "Broader region for filtering, e.g. 'Fränkische Schweiz', 'Hohe Wand', 'Kletterhalle Wien', 'Kalymnos', 'Cala Gonone'. Use the same region name consistently."},
+                "avg_heart_rate": {"type": "integer", "description": "Average heart rate in bpm (from Garmin / intervals.icu)"},
+                "calories": {"type": "integer", "description": "Energy expenditure in kcal (from Garmin / intervals.icu)"},
                 "partner": {"type": "string"},
                 "notes": {"type": "string"},
                 "intervals_activity_id": {
@@ -406,6 +408,10 @@ def _build_confirmation_text(data: dict) -> str:
     if data.get("duration_minutes"):
         h, m = divmod(int(data["duration_minutes"]), 60)
         parts.append(f"Duration: {h}h {m}m" if h else f"Duration: {m}m")
+    if data.get("avg_heart_rate"):
+        parts.append(f"Avg HR: {data['avg_heart_rate']} bpm")
+    if data.get("calories"):
+        parts.append(f"Calories: {data['calories']} kcal")
     if data.get("partner"):
         parts.append(f"Partner: {data['partner']}")
     summary = " · ".join(parts)

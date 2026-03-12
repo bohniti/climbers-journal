@@ -124,12 +124,13 @@ _TYPE_MAP: dict[str, tuple[ActivityType, list[str]]] = {
     "Walk":        (ActivityType.hiking, []),
     "Snowshoe":    (ActivityType.hiking, []),
     "Backpacking": (ActivityType.hiking, []),
-    # Running / fitness
-    "Run":         (ActivityType.fitness, ["run"]),
-    "VirtualRun":  (ActivityType.fitness, ["run", "indoor"]),
-    "TrailRun":    (ActivityType.fitness, ["trail_run"]),
-    "Swim":        (ActivityType.fitness, ["swim"]),
-    "OpenWaterSwim": (ActivityType.fitness, ["swim"]),
+    # Running / swimming → other (no dedicated type)
+    "Run":         (ActivityType.other, ["run"]),
+    "VirtualRun":  (ActivityType.other, ["run", "indoor"]),
+    "TrailRun":    (ActivityType.other, ["trail_run"]),
+    "Swim":        (ActivityType.other, ["swim"]),
+    "OpenWaterSwim": (ActivityType.other, ["swim"]),
+    # Gym / fitness
     "WeightTraining": (ActivityType.fitness, ["gym"]),
     "Workout":     (ActivityType.fitness, []),
     "Yoga":        (ActivityType.fitness, ["yoga"]),
@@ -238,6 +239,8 @@ async def import_from_intervals(
             elevation_gain_m=round(raw.elevation_gain_m) if raw.elevation_gain_m is not None else None,
             lat=raw.start_lat,
             lon=raw.start_lon,
+            avg_heart_rate=raw.avg_hr,
+            calories=raw.calories,
             tags=tags,
             source=ActivitySource.intervals_icu,
             intervals_activity_id=raw.id,

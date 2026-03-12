@@ -32,6 +32,8 @@ export interface Activity {
   region?: string;
   partner?: string;
   intervals_activity_id?: string;
+  avg_heart_rate?: number;
+  calories?: number;
 }
 
 // ─── Session route types ───────────────────────────────────────────────────

@@ -458,6 +458,26 @@ function EditForm({
           />
         </div>
 
+        {/* Avg heart rate */}
+        <div>
+          <label className="block text-xs text-slate-500 mb-1">Avg heart rate (bpm)</label>
+          <input
+            type="number" className={inputCls}
+            value={form.avg_heart_rate ?? ""}
+            onChange={(e) => set("avg_heart_rate", e.target.value ? Number(e.target.value) : null)}
+          />
+        </div>
+
+        {/* Calories */}
+        <div>
+          <label className="block text-xs text-slate-500 mb-1">Calories (kcal)</label>
+          <input
+            type="number" className={inputCls}
+            value={form.calories ?? ""}
+            onChange={(e) => set("calories", e.target.value ? Number(e.target.value) : null)}
+          />
+        </div>
+
         {/* Location name */}
         <div>
           <label className="block text-xs text-slate-500 mb-1">Location name</label>
@@ -587,6 +607,8 @@ export default function ActivityDetailPage() {
       ["Duration", activity.duration_minutes ? `${Math.floor(activity.duration_minutes / 60)}h ${activity.duration_minutes % 60}m` : undefined],
       ["Distance", activity.distance_km ? `${activity.distance_km} km` : undefined],
       ["Elevation gain", activity.elevation_gain_m ? `${activity.elevation_gain_m.toLocaleString()} m` : undefined],
+      ["Avg heart rate", activity.avg_heart_rate ? `${activity.avg_heart_rate} bpm` : undefined],
+      ["Calories", activity.calories ? `${activity.calories} kcal` : undefined],
       ["Source", activity.source],
       ["Garmin ID", activity.intervals_activity_id],
     ] as [string, string | number | undefined | null][]
