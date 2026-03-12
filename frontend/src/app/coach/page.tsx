@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   api,
@@ -184,7 +184,7 @@ function ImagePreviewStrip({
 
 // ─── Main coach page ──────────────────────────────────────────────────────────
 
-export default function CoachPage() {
+function CoachPageInner() {
   const searchParams = useSearchParams();
   const activityId = searchParams.get("activity");
 
@@ -268,7 +268,7 @@ export default function CoachPage() {
     // Encode images
     let coachImages: CoachImageData[] = [];
     if (pendingImages.length > 0) {
-      coachImages = await Promise.all(pendingImages.map(fileToCoachImage));
+      coachImages = await Promise.all(pendingImages.map((img) => fileToCoachImage(img.file)));
       setPendingImages([]);
     }
 
@@ -495,5 +495,13 @@ export default function CoachPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CoachPage() {
+  return (
+    <Suspense fallback={<div className="text-slate-400 p-4">Loading…</div>}>
+      <CoachPageInner />
+    </Suspense>
   );
 }
