@@ -147,19 +147,19 @@ export default function Dashboard() {
         <StatCard
           label="Activities"
           value={stats?.total_activities ?? "—"}
-          sub={weekStart === currentWeek ? "this week" : fmtWeekRange(weekStart, addDays(weekStart, 6))}
+          sub={stats ? (stats.week_start === currentWeek ? "this week" : fmtWeekRange(stats.week_start, stats.week_end)) : "…"}
           loading={loading}
         />
         <StatCard
           label="Hours"
           value={stats ? stats.total_hours.toFixed(1) : "—"}
-          sub={weekStart === currentWeek ? "this week" : fmtWeekRange(weekStart, addDays(weekStart, 6))}
+          sub={stats ? (stats.week_start === currentWeek ? "this week" : fmtWeekRange(stats.week_start, stats.week_end)) : "…"}
           loading={loading}
         />
         <StatCard
           label="Elevation"
           value={stats ? `${stats.total_elevation_m.toLocaleString()} m` : "—"}
-          sub={weekStart === currentWeek ? "this week" : fmtWeekRange(weekStart, addDays(weekStart, 6))}
+          sub={stats ? (stats.week_start === currentWeek ? "this week" : fmtWeekRange(stats.week_start, stats.week_end)) : "…"}
           loading={loading}
         />
       </div>
