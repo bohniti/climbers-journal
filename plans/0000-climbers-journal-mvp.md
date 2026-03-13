@@ -151,10 +151,10 @@ CORS_ORIGINS=["http://localhost:3000"]
 - `app/backend/.venv` and `app/frontend/node_modules` are properly gitignored
 
 ### Step 2 — intervals.icu client + tool registry
-- [ ] Implement `app/backend/climbers_journal/services/intervals.py` — async httpx client with Basic Auth, methods: `get_activities(limit)`, `get_latest_activity()`, `get_wellness(oldest, newest)`
-- [ ] Implement `app/backend/climbers_journal/tools/registry.py` — collects tool definitions, dispatches by name
-- [ ] Implement `app/backend/climbers_journal/tools/intervals.py` — tool schemas + handler functions
-- [ ] Commit: `feat(PROJ-1): intervals.icu client and tool registry`
+- [x] Implement `app/backend/climbers_journal/services/intervals.py` — async httpx client with Basic Auth, methods: `get_activities(limit)`, `get_latest_activity()`, `get_wellness(oldest, newest)`
+- [x] Implement `app/backend/climbers_journal/tools/registry.py` — collects tool definitions, dispatches by name
+- [x] Implement `app/backend/climbers_journal/tools/intervals.py` — tool schemas + handler functions
+- [x] Commit: `feat(PROJ-1): intervals.icu client and tool registry`
 
 ### Step 3 — LLM chat endpoint
 - [ ] Implement `app/backend/climbers_journal/services/llm.py` — Kimi K2.5 via openai SDK, tool call loop (call → tool_call → dispatch → re-submit → repeat until text)
