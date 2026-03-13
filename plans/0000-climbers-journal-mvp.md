@@ -145,6 +145,11 @@ CORS_ORIGINS=["http://localhost:3000"]
 - [x] Add `.env.example`
 - [x] Commit: `feat(PROJ-1): scaffold monorepo with backend, frontend, and devcontainer`
 
+**Notes:**
+- `fastapi` alone is insufficient for `fastapi dev` CLI — changed to `fastapi[standard]` in pyproject.toml
+- Two stray empty files exist in repo root (`Remove`, `\302\240` non-breaking space) — pre-existing, not from this step. Should be cleaned up.
+- `app/backend/.venv` and `app/frontend/node_modules` are properly gitignored
+
 ### Step 2 — intervals.icu client + tool registry
 - [ ] Implement `app/backend/climbers_journal/services/intervals.py` — async httpx client with Basic Auth, methods: `get_activities(limit)`, `get_latest_activity()`, `get_wellness(oldest, newest)`
 - [ ] Implement `app/backend/climbers_journal/tools/registry.py` — collects tool definitions, dispatches by name
