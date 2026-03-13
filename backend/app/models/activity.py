@@ -77,10 +77,6 @@ class Activity(SQLModel, table=True):
     # Garmin / intervals.icu linkage
     intervals_activity_id: Optional[str] = None
 
-    # Endurance metrics (from Garmin via intervals.icu)
-    avg_heart_rate: Optional[int] = None   # bpm
-    calories: Optional[int] = None        # kcal
-
 
 # ─── Pydantic request/response models ─────────────────────────────────────────
 
@@ -101,8 +97,6 @@ class ActivityCreate(SQLModel):
     region: Optional[str] = None
     partner: Optional[str] = None
     intervals_activity_id: Optional[str] = None
-    avg_heart_rate: Optional[int] = None
-    calories: Optional[int] = None
     # Optional routes for chat confirmation flow — saved automatically on create
     routes: Optional[list[dict]] = None
 
@@ -124,8 +118,6 @@ class ActivityUpdate(SQLModel):
     region: Optional[str] = None
     partner: Optional[str] = None
     intervals_activity_id: Optional[str] = None
-    avg_heart_rate: Optional[int] = None
-    calories: Optional[int] = None
 
 
 class ActivityOut(SQLModel):
@@ -148,5 +140,3 @@ class ActivityOut(SQLModel):
     region: Optional[str] = None
     partner: Optional[str] = None
     intervals_activity_id: Optional[str] = None
-    avg_heart_rate: Optional[int] = None
-    calories: Optional[int] = None

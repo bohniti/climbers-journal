@@ -32,8 +32,6 @@ export interface Activity {
   region?: string;
   partner?: string;
   intervals_activity_id?: string;
-  avg_heart_rate?: number;
-  calories?: number;
 }
 
 // ─── Session route types ───────────────────────────────────────────────────
@@ -414,6 +412,6 @@ export const ACTIVITY_TYPE_TAGS: Record<ActivityType, string[]> = {
   multi_pitch: ["bolted", "trad", "alpine"],
   cycling: ["commute", "road_bike", "gravel_bike", "mtb", "indoor"],
   hiking: ["alpine"],
-  fitness: ["gym", "yoga"],
-  other: ["run", "trail_run", "swim"],
+  fitness: ["run", "trail_run", "swim", "gym", "yoga"],
+  other: [],
 };
