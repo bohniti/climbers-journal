@@ -268,7 +268,7 @@ export default function CoachPage() {
     // Encode images
     let coachImages: CoachImageData[] = [];
     if (pendingImages.length > 0) {
-      coachImages = await Promise.all(pendingImages.map(fileToCoachImage));
+      coachImages = await Promise.all(pendingImages.map((img) => fileToCoachImage(img.file)));
       setPendingImages([]);
     }
 
