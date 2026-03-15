@@ -178,9 +178,9 @@ CORS_ORIGINS=["http://localhost:3000"]
 - [x] Commit: `feat(PROJ-1): multi-provider LLM support (kimi + gemini)`
 
 ### Step 4 — Frontend chat UI
-- [ ] Build `app/frontend/src/app/page.tsx` — chat interface (message list + input, auto-scroll, loading state)
-- [ ] Build `app/frontend/src/lib/api.ts` — typed `POST /chat` client
-- [ ] Commit: `feat(PROJ-1): chat UI connected to backend`
+- [x] Build `app/frontend/src/app/page.tsx` — chat interface (message list + input, auto-scroll, loading state)
+- [x] Build `app/frontend/src/lib/api.ts` — typed `POST /chat` client
+- [x] Commit: `feat(PROJ-1): chat UI connected to backend`
 
 ### Step 5 — Smoke test + polish
 - [ ] Verify end-to-end: "What was my last activity?" returns intervals.icu data
