@@ -189,7 +189,7 @@ CORS_ORIGINS=["http://localhost:3000"]
 - [x] Commit: `docs(PROJ-1): add run instructions and verify e2e`
 
 ### Step 6 — Hardening
-- [ ] Share a single `httpx.AsyncClient` in `services/intervals.py` instead of creating one per request (connection pooling)
-- [ ] Catch `httpx.HTTPStatusError` in `tools/intervals.py` handlers and return error strings so the LLM can respond gracefully
-- [ ] Add conversation eviction to `routers/chat.py` (e.g. max conversations, TTL-based cleanup)
-- [ ] Commit: `fix(PROJ-1): connection pooling, error handling, and conversation eviction`
+- [x] Share a single `httpx.AsyncClient` in `services/intervals.py` instead of creating one per request (connection pooling)
+- [x] Catch `httpx.HTTPStatusError` in `tools/intervals.py` handlers and return error strings so the LLM can respond gracefully
+- [x] Add conversation eviction to `routers/chat.py` (e.g. max conversations, TTL-based cleanup)
+- [x] Commit: `fix(PROJ-1): connection pooling, error handling, and conversation eviction`

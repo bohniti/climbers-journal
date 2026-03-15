@@ -7,10 +7,16 @@ import httpx
 
 BASE_URL = "https://intervals.icu/api/v1"
 
+_client: httpx.AsyncClient | None = None
 
-def _auth() -> tuple[str, str]:
-    api_key = os.getenv("INTERVALS_API_KEY", "")
-    return ("API_KEY", api_key)
+
+def _get_client() -> httpx.AsyncClient:
+    """Return a shared httpx.AsyncClient, creating it on first use."""
+    global _client
+    if _client is None or _client.is_closed:
+        api_key = os.getenv("INTERVALS_API_KEY", "")
+        _client = httpx.AsyncClient(auth=("API_KEY", api_key))
+    return _client
 
 
 def _athlete_id() -> str:
@@ -27,13 +33,12 @@ async def get_activities(
         "oldest": oldest or (today - timedelta(days=30)).isoformat(),
         "newest": newest or today.isoformat(),
     }
-    async with httpx.AsyncClient(auth=_auth()) as client:
-        resp = await client.get(
-            f"{BASE_URL}/athlete/{_athlete_id()}/activities",
-            params=params,
-        )
-        resp.raise_for_status()
-        return resp.json()
+    resp = await _get_client().get(
+        f"{BASE_URL}/athlete/{_athlete_id()}/activities",
+        params=params,
+    )
+    resp.raise_for_status()
+    return resp.json()
 
 
 async def get_latest_activity() -> dict:
@@ -53,10 +58,9 @@ async def get_wellness(oldest: str | None = None, newest: str | None = None) -> 
         "oldest": oldest or (today - timedelta(days=30)).isoformat(),
         "newest": newest or today.isoformat(),
     }
-    async with httpx.AsyncClient(auth=_auth()) as client:
-        resp = await client.get(
-            f"{BASE_URL}/athlete/{_athlete_id()}/wellness",
-            params=params,
-        )
-        resp.raise_for_status()
-        return resp.json()
+    resp = await _get_client().get(
+        f"{BASE_URL}/athlete/{_athlete_id()}/wellness",
+        params=params,
+    )
+    resp.raise_for_status()
+    return resp.json()

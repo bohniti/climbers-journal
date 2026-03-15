@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
+import httpx
+
 from climbers_journal.services import intervals
 
 definitions: list[dict[str, Any]] = [
@@ -63,22 +65,29 @@ definitions: list[dict[str, Any]] = [
 
 async def handle(tool_name: str, arguments: dict[str, Any]) -> str | None:
     """Handle a tool call. Returns None if the tool name is not ours."""
-    if tool_name == "get_latest_activity":
-        result = await intervals.get_latest_activity()
-        return json.dumps(result, default=str)
+    try:
+        if tool_name == "get_latest_activity":
+            result = await intervals.get_latest_activity()
+            return json.dumps(result, default=str)
 
-    if tool_name == "get_activities":
-        result = await intervals.get_activities(
-            oldest=arguments.get("oldest"),
-            newest=arguments.get("newest"),
-        )
-        return json.dumps(result, default=str)
+        if tool_name == "get_activities":
+            result = await intervals.get_activities(
+                oldest=arguments.get("oldest"),
+                newest=arguments.get("newest"),
+            )
+            return json.dumps(result, default=str)
 
-    if tool_name == "get_wellness":
-        result = await intervals.get_wellness(
-            oldest=arguments.get("oldest"),
-            newest=arguments.get("newest"),
-        )
-        return json.dumps(result, default=str)
+        if tool_name == "get_wellness":
+            result = await intervals.get_wellness(
+                oldest=arguments.get("oldest"),
+                newest=arguments.get("newest"),
+            )
+            return json.dumps(result, default=str)
+
+    except httpx.HTTPStatusError as exc:
+        return json.dumps({
+            "error": f"intervals.icu API error: {exc.response.status_code}",
+            "detail": exc.response.text,
+        })
 
     return None
