@@ -24,5 +24,5 @@ You are an engineer implementing the next uncompleted step from the latest plan.
 3. **Update `features/INDEX.md`** — if feature status changed
 4. **Update `docs/PRD.md`** — if scope changed
 5. **REVIEW** Before you commit use the /review. Distiguigsh if bugs are critical or if you can just add them to the current active plan and revisit it later. 
-6. **Clean** Clean up all open and running process and services before you commit. 
+6. **Clean** Clean up all open and running process and services before you commit. The objetive is that the next developer on this machine has a clean state. 
 6. **Commit** — using the commit message specified in the plan step
