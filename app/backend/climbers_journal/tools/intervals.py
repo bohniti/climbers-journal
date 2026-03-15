@@ -63,7 +63,7 @@ definitions: list[dict[str, Any]] = [
 ]
 
 
-async def handle(tool_name: str, arguments: dict[str, Any]) -> str | None:
+async def handle(tool_name: str, arguments: dict[str, Any], context: dict[str, Any]) -> str | None:
     """Handle a tool call. Returns None if the tool name is not ours."""
     try:
         if tool_name == "get_latest_activity":

@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import time
 import uuid
+from typing import Any
 
 from pydantic import BaseModel
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlmodel.ext.asyncio.session import AsyncSession
 
+from climbers_journal.db import get_session
 from climbers_journal.services.llm import DEFAULT_PROVIDER, PROVIDERS, SYSTEM_PROMPT, chat
 
 router = APIRouter()
@@ -43,6 +46,7 @@ class ChatResponse(BaseModel):
     conversation_id: str
     reply: str
     provider: str
+    draft_card: dict[str, Any] | None = None
 
 
 @router.get("/providers")
@@ -51,7 +55,10 @@ async def list_providers() -> list[str]:
 
 
 @router.post("/chat", response_model=ChatResponse)
-async def post_chat(req: ChatRequest) -> ChatResponse:
+async def post_chat(
+    req: ChatRequest,
+    session: AsyncSession = Depends(get_session),
+) -> ChatResponse:
     _evict_stale()
 
     conv_id = req.conversation_id or str(uuid.uuid4())
@@ -65,10 +72,11 @@ async def post_chat(req: ChatRequest) -> ChatResponse:
     messages.append({"role": "user", "content": req.message})
     _conversations[conv_id] = (time.monotonic(), messages)
 
-    reply = await chat(messages, provider_name=req.provider)
+    result = await chat(messages, provider_name=req.provider, context={"db_session": session})
 
     return ChatResponse(
         conversation_id=conv_id,
-        reply=reply,
+        reply=result.reply,
         provider=req.provider or DEFAULT_PROVIDER,
+        draft_card=result.draft_card,
     )

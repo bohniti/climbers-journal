@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
+from typing import Any
 
 from openai import AsyncOpenAI
 
@@ -12,9 +13,11 @@ from climbers_journal.tools.registry import dispatch, get_all_definitions
 
 SYSTEM_PROMPT = (
     "You are a helpful training assistant for a climber and endurance athlete. "
-    "You have access to the user's intervals.icu data. "
+    "You have access to the user's intervals.icu data and their climbing journal. "
     "Use the available tools to fetch real data before answering questions about "
     "activities, training load, wellness, or performance trends. "
+    "When the user describes a climbing session (routes climbed, attempted, etc.), "
+    "use the parse_climbing_session tool to create a structured draft for them to review. "
     "Be concise and specific — reference actual numbers from the data."
 )
 MAX_TOOL_ROUNDS = 10
@@ -64,16 +67,30 @@ def get_provider(name: str | None = None) -> LLMProvider:
     return PROVIDERS[key]
 
 
-async def chat(messages: list[dict], provider_name: str | None = None) -> str:
+@dataclass
+class ChatResult:
+    """Result of a chat completion, including optional draft card."""
+
+    reply: str
+    draft_card: dict[str, Any] | None = None
+
+
+async def chat(
+    messages: list[dict],
+    provider_name: str | None = None,
+    context: dict[str, Any] | None = None,
+) -> ChatResult:
     """Run a chat completion with tool use loop.
 
     *messages* is the full conversation history (system + user + assistant msgs).
     *provider_name* selects which LLM to use (default from env).
-    Returns the final assistant text reply.
+    *context* carries request-scoped resources (e.g. ``db_session``).
+    Returns a ChatResult with the reply text and optional draft_card.
     """
     provider = get_provider(provider_name)
     client = _get_client(provider)
     tools = get_all_definitions()
+    ctx = context or {}
 
     for _ in range(MAX_TOOL_ROUNDS):
         response = await client.chat.completions.create(
@@ -90,13 +107,16 @@ async def chat(messages: list[dict], provider_name: str | None = None) -> str:
 
         # If no tool calls, we're done
         if not assistant_message.tool_calls:
-            return assistant_message.content or ""
+            return ChatResult(
+                reply=assistant_message.content or "",
+                draft_card=ctx.get("draft_card"),
+            )
 
         # Process each tool call
         for tool_call in assistant_message.tool_calls:
             fn = tool_call.function
             arguments = json.loads(fn.arguments) if fn.arguments else {}
-            result = await dispatch(fn.name, arguments)
+            result = await dispatch(fn.name, arguments, ctx)
 
             messages.append(
                 {
@@ -107,4 +127,7 @@ async def chat(messages: list[dict], provider_name: str | None = None) -> str:
             )
 
     # Safety: if we hit the limit, return whatever we have
-    return assistant_message.content or "Sorry, I wasn't able to complete that request."
+    return ChatResult(
+        reply=assistant_message.content or "Sorry, I wasn't able to complete that request.",
+        draft_card=ctx.get("draft_card"),
+    )

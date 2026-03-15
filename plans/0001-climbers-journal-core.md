@@ -243,8 +243,8 @@ DB: records persisted via normal CRUD path
 
 **Goal:** The copilot can parse natural-language climbing sessions into structured drafts. The frontend renders draft cards for user confirmation.
 
-- [ ] Refactor tool registry: `dispatch(name, args, context)` — context carries `db_session`
-- [ ] New tool module `climbers_journal/tools/record.py`:
+- [x] Refactor tool registry: `dispatch(name, args, context)` — context carries `db_session`
+- [x] New tool module `climbers_journal/tools/record.py`:
   - `parse_climbing_session` — accepts natural language description, returns structured JSON draft:
     ```json
     {
@@ -257,14 +257,14 @@ DB: records persisted via normal CRUD path
     ```
   - Tool searches existing crags/routes for matches (case-insensitive), marks as `existing` or `new`
   - Does NOT write to DB — returns draft only
-- [ ] Backend: surface tool result as `draft_card` field on `ChatResponse` (eng review #3)
-- [ ] Frontend: detect `draft_card` in response, render as editable card with:
+- [x] Backend: surface tool result as `draft_card` field on `ChatResponse` (eng review #3)
+- [x] Frontend: detect `draft_card` in response, render as editable card with:
   - Crag name (editable, shows "existing" or "new" badge)
   - List of ascents (each editable: route, grade, tick_type, tries)
   - Add/remove ascent buttons
   - Confirm / Cancel buttons
-- [ ] On confirm: frontend calls `POST /sessions/climbing` with the draft payload (eng review #4)
-- [ ] Update LLM system prompt to describe the parse_climbing_session tool
+- [x] On confirm: frontend calls `POST /sessions/climbing` with the draft payload (eng review #4)
+- [x] Update LLM system prompt to describe the parse_climbing_session tool
 
 ### Step 6: Frontend — Activity Log View
 **Feature:** PROJ-6

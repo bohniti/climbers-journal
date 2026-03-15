@@ -2,10 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { sendMessage } from "@/lib/api";
+import type { DraftCard } from "@/lib/api";
+import DraftCardView from "@/components/DraftCard";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  draft_card?: DraftCard | null;
 }
 
 export default function Home() {
@@ -30,6 +33,34 @@ export default function Home() {
     inputRef.current?.focus();
   }, []);
 
+  const handleDraftConfirmed = useCallback(
+    (msgIndex: number, confirmMessage: string) => {
+      setMessages((prev) =>
+        prev.map((m, i) =>
+          i === msgIndex ? { ...m, draft_card: null } : m
+        )
+      );
+      // Add confirmation as assistant message
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: confirmMessage },
+      ]);
+    },
+    []
+  );
+
+  const handleDraftCancelled = useCallback((msgIndex: number) => {
+    setMessages((prev) =>
+      prev.map((m, i) =>
+        i === msgIndex ? { ...m, draft_card: null } : m
+      )
+    );
+    setMessages((prev) => [
+      ...prev,
+      { role: "assistant", content: "Draft cancelled." },
+    ]);
+  }, []);
+
   const handleSubmit = useCallback(
     async (e?: React.FormEvent) => {
       e?.preventDefault();
@@ -49,7 +80,11 @@ export default function Home() {
         setConversationId(res.conversation_id);
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: res.reply },
+          {
+            role: "assistant",
+            content: res.reply,
+            draft_card: res.draft_card,
+          },
         ]);
       } catch (err) {
         setMessages((prev) => [
@@ -101,19 +136,31 @@ export default function Home() {
             </div>
           )}
           {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`mb-4 flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-            >
+            <div key={i} className="mb-4">
               <div
-                className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                  msg.role === "user"
-                    ? "bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-900"
-                    : "bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-                }`}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
-                {msg.content}
+                <div
+                  className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                    msg.role === "user"
+                      ? "bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-900"
+                      : "bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
+                  }`}
+                >
+                  {msg.content}
+                </div>
               </div>
+              {msg.draft_card && (
+                <div className="mt-2 max-w-[85%]">
+                  <DraftCardView
+                    draft={msg.draft_card}
+                    onConfirmed={(confirmMsg) =>
+                      handleDraftConfirmed(i, confirmMsg)
+                    }
+                    onCancelled={() => handleDraftCancelled(i)}
+                  />
+                </div>
+              )}
             </div>
           ))}
           {loading && (
