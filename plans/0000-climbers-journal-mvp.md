@@ -111,8 +111,8 @@ Authenticated via HTTP Basic Auth: `API_KEY` as username, the key as password.
 
 | Tool name | Description | intervals.icu endpoint |
 |---|---|---|
-| `get_latest_activity` | Most recent activity with details | `GET /api/v1/athlete/{id}/activities?limit=1` |
-| `get_activities` | Recent N activities (default 10) | `GET /api/v1/athlete/{id}/activities` |
+| `get_latest_activity` | Most recent activity with details | `GET /api/v1/athlete/{id}/activities` (last 30 days, returns last) |
+| `get_activities` | Activities in a date range (default last 30 days) | `GET /api/v1/athlete/{id}/activities?oldest=&newest=` |
 | `get_wellness` | Wellness data (CTL, ATL, ramp rate) | `GET /api/v1/athlete/{id}/wellness` |
 
 Tool call flow:
@@ -183,9 +183,10 @@ CORS_ORIGINS=["http://localhost:3000"]
 - [x] Commit: `feat(PROJ-1): chat UI connected to backend`
 
 ### Step 5 — Smoke test + polish
-- [ ] Verify end-to-end: "What was my last activity?" returns intervals.icu data
-- [ ] Add run instructions to root `README.md`
-- [ ] Commit: `docs(PROJ-1): add run instructions and verify e2e`
+- [x] Verify end-to-end: "What was my last activity?" returns intervals.icu data
+- [x] Add run instructions to root `README.md`
+- [x] Fix `get_activities` to use required `oldest`/`newest` date params (intervals.icu API requires them)
+- [x] Commit: `docs(PROJ-1): add run instructions and verify e2e`
 
 ### Step 6 — Hardening
 - [ ] Share a single `httpx.AsyncClient` in `services/intervals.py` instead of creating one per request (connection pooling)

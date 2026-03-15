@@ -23,4 +23,5 @@ You are an engineer implementing the next uncompleted step from the latest plan.
 2. **Update `CLAUDE.md`** — if tech stack, structure, or commands changed
 3. **Update `features/INDEX.md`** — if feature status changed
 4. **Update `docs/PRD.md`** — if scope changed
-5. **Commit** — using the commit message specified in the plan step
+5. **REVIEW** Before you commit use the /review 
+6. **Commit** — using the commit message specified in the plan step

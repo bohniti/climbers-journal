@@ -20,14 +20,17 @@ definitions: list[dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "get_activities",
-            "description": "Get recent activities from intervals.icu. Returns a list of activity summaries.",
+            "description": "Get recent activities from intervals.icu. Returns a list of activity summaries for a date range (defaults to last 30 days).",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "limit": {
-                        "type": "integer",
-                        "description": "Number of activities to return (default 10, max 100).",
-                        "default": 10,
+                    "oldest": {
+                        "type": "string",
+                        "description": "Start date in YYYY-MM-DD format (defaults to 30 days ago).",
+                    },
+                    "newest": {
+                        "type": "string",
+                        "description": "End date in YYYY-MM-DD format (defaults to today).",
                     },
                 },
                 "required": [],
@@ -65,8 +68,10 @@ async def handle(tool_name: str, arguments: dict[str, Any]) -> str | None:
         return json.dumps(result, default=str)
 
     if tool_name == "get_activities":
-        limit = min(arguments.get("limit", 10), 100)
-        result = await intervals.get_activities(limit=limit)
+        result = await intervals.get_activities(
+            oldest=arguments.get("oldest"),
+            newest=arguments.get("newest"),
+        )
         return json.dumps(result, default=str)
 
     if tool_name == "get_wellness":
