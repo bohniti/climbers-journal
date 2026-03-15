@@ -11,5 +11,5 @@
 | PROJ-7 | Add climbing session form | done | [0001](../plans/0001-climbers-journal-core.md) |
 | PROJ-8a | Copilot record tools + draft card | done | [0001](../plans/0001-climbers-journal-core.md) |
 | PROJ-8b | Copilot query tools | done | [0001](../plans/0001-climbers-journal-core.md) |
-| PROJ-9 | Dashboard + grade pyramid | planned | [0001](../plans/0001-climbers-journal-core.md) |
+| PROJ-9 | Dashboard + grade pyramid | done | [0001](../plans/0001-climbers-journal-core.md) |
 | PROJ-10 | Training calendar | planned | [0001](../plans/0001-climbers-journal-core.md) |

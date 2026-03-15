@@ -310,17 +310,17 @@ DB: records persisted via normal CRUD path
 
 **Goal:** A landing page that shows training at a glance.
 
-- [ ] Create `/` page as dashboard:
+- [x] Create `/` page as dashboard:
   - Recent activity feed (last 7 days, both climbing + endurance)
   - **Grade pyramid** — sends only (onsight/flash/redpoint/repeat), with indoor/outdoor toggle
   - Endurance stats card: volume this week, CTL/ATL/TSB from intervals.icu
   - Climbing stats card: sends this week/month, hardest send
-- [ ] Grade pyramid: horizontal bar chart by grade, filterable by:
+- [x] Grade pyramid: horizontal bar chart by grade, filterable by:
   - Sends only (exclude attempts/hangs)
   - Indoor vs outdoor vs all
   - Time period (all time, this year, this month)
-- [ ] Quick-add button → links to `/log/add`
-- [ ] Copilot teaser → links to `/chat`
+- [x] Quick-add button → links to `/log/add`
+- [x] Copilot teaser → links to `/chat`
 
 ### Step 10: Frontend — Training Calendar
 **Feature:** PROJ-10

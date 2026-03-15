@@ -175,6 +175,90 @@ export async function listAscents(
   return res.json();
 }
 
+// ── Dashboard / Stats ─────────────────────────────────────────────────
+
+export interface GradePyramidEntry {
+  grade: string;
+  onsight: number;
+  flash: number;
+  redpoint: number;
+  pinkpoint: number;
+  repeat: number;
+  total: number;
+}
+
+export interface HardestSend {
+  route_name: string | null;
+  grade: string;
+  tick_type: string;
+  crag_name: string | null;
+  date: string;
+}
+
+export interface ClimbingStatsData {
+  total_sends_week: number;
+  total_sends_month: number;
+  hardest_send: HardestSend | null;
+}
+
+export interface EnduranceStatsData {
+  activities_week: number;
+  total_duration_min_week: number;
+  total_distance_km_week: number;
+  total_training_load_week: number;
+}
+
+export interface RecentClimbingItem {
+  id: number;
+  date: string;
+  route_name: string | null;
+  grade: string | null;
+  tick_type: string;
+  crag_name: string | null;
+}
+
+export interface RecentEnduranceItem {
+  id: number;
+  date: string;
+  type: string;
+  name: string | null;
+  duration_s: number;
+  distance_m: number | null;
+  training_load: number | null;
+}
+
+export interface DashboardData {
+  grade_pyramid: GradePyramidEntry[];
+  climbing_stats: ClimbingStatsData;
+  endurance_stats: EnduranceStatsData;
+  recent_climbing: RecentClimbingItem[];
+  recent_endurance: RecentEnduranceItem[];
+}
+
+export async function fetchDashboard(): Promise<DashboardData> {
+  const res = await fetch(`${API_BASE}/stats/dashboard`);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to fetch dashboard (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
+export async function fetchGradePyramid(
+  opts: { venue_type?: string; period?: string } = {}
+): Promise<GradePyramidEntry[]> {
+  const params = new URLSearchParams();
+  if (opts.venue_type) params.set("venue_type", opts.venue_type);
+  if (opts.period) params.set("period", opts.period);
+
+  const res = await fetch(`${API_BASE}/stats/grade-pyramid?${params}`);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to fetch grade pyramid (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
 // ── Activities (Endurance) ────────────────────────────────────────────
 
 export interface ActivityResponse {

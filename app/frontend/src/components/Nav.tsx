@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const links = [
-  { href: "/log", label: "Log" },
-  { href: "/chat", label: "Copilot" },
+  { href: "/", label: "Dashboard", exact: true },
+  { href: "/log", label: "Log", exact: false },
+  { href: "/chat", label: "Copilot", exact: false },
 ] as const;
 
 export default function Nav() {
@@ -14,14 +15,14 @@ export default function Nav() {
   return (
     <header className="flex shrink-0 items-center justify-between border-b border-zinc-200 px-6 py-3 dark:border-zinc-800">
       <Link
-        href="/log"
+        href="/"
         className="text-lg font-semibold text-zinc-900 dark:text-zinc-100"
       >
         Climbers Journal
       </Link>
       <nav className="flex gap-1">
-        {links.map(({ href, label }) => {
-          const active = pathname.startsWith(href);
+        {links.map(({ href, label, exact }) => {
+          const active = exact ? pathname === href : pathname.startsWith(href);
           return (
             <Link
               key={href}
