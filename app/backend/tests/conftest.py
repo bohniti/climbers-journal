@@ -11,13 +11,16 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+import climbers_journal.models  # noqa: F401 — register models with SQLModel.metadata
 
-@pytest_asyncio.fixture(scope="session")
-def engine():
-    return create_async_engine(
-        os.environ["DATABASE_URL"],
-        echo=False,
-    )
+TEST_DB_URL = os.environ["DATABASE_URL"]
+
+
+@pytest_asyncio.fixture
+async def engine():
+    eng = create_async_engine(TEST_DB_URL, echo=False)
+    yield eng
+    await eng.dispose()
 
 
 @pytest_asyncio.fixture(autouse=True)

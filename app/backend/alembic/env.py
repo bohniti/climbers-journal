@@ -24,7 +24,7 @@ config.set_main_option(
 )
 
 # Import all models so SQLModel.metadata picks them up
-# (add model imports here as they are created)
+import climbers_journal.models  # noqa: F401
 
 target_metadata = SQLModel.metadata
 

@@ -178,28 +178,28 @@ DB: records persisted via normal CRUD path
 
 **Goal:** CRUD for crags, areas, routes, ascents — with indoor gym support and grade auto-suggestion.
 
-- [ ] Create SQLModel models in `climbers_journal/models/`:
+- [x] Create SQLModel models in `climbers_journal/models/`:
   - `Crag` — with `venue_type` enum, `default_grade_sys`, `name_normalized` (eng review #10)
   - `Area` — subdivision within a crag, `name_normalized`
   - `Route` — with `grade` as raw string + `grade_system` enum, `name_normalized`, **`area_id` nullable** (eng review #8)
   - `Ascent` — nullable `route_id` for gym sessions, `crag_id` always populated (eng review #5), denormalized `crag_name` + `route_name` (eng review #14)
-- [ ] Country → grade system auto-suggestion lookup (simple dict)
-- [ ] Create Alembic migration for climbing tables
+- [x] Country → grade system auto-suggestion lookup (simple dict)
+- [x] Create Alembic migration for climbing tables
   - Composite index on `ascent(crag_id, tick_type, date)` for grade pyramid queries
-- [ ] Create CRUD service in `climbers_journal/services/climbing.py`:
+- [x] Create CRUD service in `climbers_journal/services/climbing.py`:
   - Create-or-find logic uses `name_normalized` for matching (eng review #10)
   - Dedup logic in service layer: same route + date + tick_type = duplicate (eng review #9)
-- [ ] Create REST endpoints in `climbers_journal/routers/climbing.py`:
+- [x] Create REST endpoints in `climbers_journal/routers/climbing.py`:
   - `POST /sessions/climbing` — bulk create: crag + routes + ascents in one transaction (eng review #4)
   - `GET /crags` — list crags
   - `GET /crags/{id}/areas` — list areas within a crag
   - `GET /crags/{id}/routes` — list routes within a crag (or area)
   - `GET /ascents` — list all ascents with filters
   - `GET /ascents/{id}`, `PUT`, `DELETE` — single ascent CRUD
-- [ ] Pagination on all list endpoints (offset + limit, default 50)
-- [ ] Add validation: date not in future, outdoor ascents require route_id
-- [ ] Error responses: FastAPI HTTPException with `{detail, code?}` convention (eng review #11)
-- [ ] Tests: CRUD happy paths, validation rules, dedup, name normalization edge cases
+- [x] Pagination on all list endpoints (offset + limit, default 50)
+- [x] Add validation: date not in future, outdoor ascents require route_id
+- [x] Error responses: FastAPI HTTPException with `{detail, code?}` convention (eng review #11)
+- [x] Tests: CRUD happy paths, validation rules, dedup, name normalization edge cases
 
 ### Step 3: Endurance Activity Sync
 **Feature:** PROJ-4
