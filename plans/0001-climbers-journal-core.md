@@ -283,14 +283,14 @@ DB: records persisted via normal CRUD path
 
 **Goal:** Form-based fallback for logging climbing sessions (for when you prefer structured input over chat).
 
-- [ ] Create `/log/add` page with multi-step form:
+- [x] Create `/log/add` page with multi-step form:
   1. Select or create crag (search + autocomplete from existing, case-insensitive)
   2. Select or create area within crag
   3. Add one or more ticks: select/create route, tick_type, tries, rating, notes
-- [ ] For indoor gyms: skip area/route selection, just grade + tick_type per problem
-- [ ] Form supports adding multiple ticks per session (common: 5-10 routes per session)
-- [ ] Auto-save draft to localStorage
-- [ ] Success state shows summary of logged session
+- [x] For indoor gyms: skip area/route selection, just grade + tick_type per problem
+- [x] Form supports adding multiple ticks per session (common: 5-10 routes per session)
+- [x] Auto-save draft to localStorage
+- [x] Success state shows summary of logged session
 
 ### Step 8: Copilot Query Tools
 **Feature:** PROJ-8b

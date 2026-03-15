@@ -218,6 +218,12 @@ export default function LogPage() {
       {/* Filter bar */}
       <div className="shrink-0 border-b border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-3">
+          <Link
+            href="/log/add"
+            className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+          >
+            + Log session
+          </Link>
           {/* Activity type */}
           <select
             value={filters.activityType}
@@ -303,14 +309,19 @@ export default function LogPage() {
             <div className="pt-24 text-center text-zinc-400 dark:text-zinc-600">
               <p className="text-lg">No activities yet</p>
               <p className="mt-1 text-sm">
-                Use the{" "}
+                <Link
+                  href="/log/add"
+                  className="underline hover:text-zinc-600 dark:hover:text-zinc-300"
+                >
+                  Log a climbing session
+                </Link>{" "}
+                or use the{" "}
                 <Link
                   href="/chat"
                   className="underline hover:text-zinc-600 dark:hover:text-zinc-300"
                 >
                   Copilot
-                </Link>{" "}
-                to log a climbing session
+                </Link>
               </p>
             </div>
           )}

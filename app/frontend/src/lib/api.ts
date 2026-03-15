@@ -72,7 +72,9 @@ export interface ClimbingSessionRequest {
     tick_type: string;
     date: string;
     tries?: number | null;
+    rating?: number | null;
     notes?: string | null;
+    partner?: string | null;
     style?: string | null;
   }[];
 }
@@ -99,6 +101,32 @@ export async function createClimbingSession(
     throw new Error(`Failed to save session (${res.status}): ${text}`);
   }
 
+  return res.json();
+}
+
+// ── Crags ─────────────────────────────────────────────────────────────
+
+export interface CragResponse {
+  id: number;
+  name: string;
+  country: string | null;
+  region: string | null;
+  venue_type: string;
+  default_grade_sys: string;
+}
+
+export async function listCrags(
+  opts: { offset?: number; limit?: number } = {}
+): Promise<CragResponse[]> {
+  const params = new URLSearchParams();
+  if (opts.offset != null) params.set("offset", String(opts.offset));
+  if (opts.limit != null) params.set("limit", String(opts.limit));
+
+  const res = await fetch(`${API_BASE}/crags?${params}`);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to fetch crags (${res.status}): ${text}`);
+  }
   return res.json();
 }
 
