@@ -1,5 +1,6 @@
 """Dashboard stats endpoints."""
 
+import calendar as cal
 import datetime
 
 from fastapi import APIRouter, Depends, Query
@@ -304,3 +305,109 @@ async def _recent_endurance(
         )
         for a in result.all()
     ]
+
+
+# ── Calendar ─────────────────────────────────────────────────────────
+
+
+class CalendarClimbingDay(BaseModel):
+    route_count: int
+    hardest_grade: str | None
+    venue_type: str  # "outdoor_crag", "indoor_gym", or "mixed"
+
+
+class CalendarEnduranceDay(BaseModel):
+    activities: list[dict]  # [{type, duration_s}]
+
+
+class CalendarDayEntry(BaseModel):
+    date: str  # YYYY-MM-DD
+    climbing: CalendarClimbingDay | None = None
+    endurance: CalendarEnduranceDay | None = None
+
+
+class CalendarResponse(BaseModel):
+    month: str  # YYYY-MM
+    days: list[CalendarDayEntry]
+
+
+@router.get("/calendar", response_model=CalendarResponse)
+async def get_calendar(
+    month: str = Query(..., description="Month in YYYY-MM format", pattern=r"^\d{4}-\d{2}$"),
+    session: AsyncSession = Depends(get_session),
+):
+    year, mon = int(month[:4]), int(month[5:7])
+    first_day = datetime.date(year, mon, 1)
+    last_day = datetime.date(year, mon, cal.monthrange(year, mon)[1])
+
+    # Climbing: count routes + hardest grade per day
+    climbing_stmt = (
+        select(
+            Ascent.date,
+            func.count().label("route_count"),
+            func.max(Ascent.grade).label("hardest_grade"),
+        )
+        .where(Ascent.date >= first_day, Ascent.date <= last_day)
+        .group_by(Ascent.date)
+    )
+    climbing_result = await session.exec(climbing_stmt)
+    climbing_by_date: dict[datetime.date, dict] = {}
+    for row_date, route_count, hardest_grade in climbing_result.all():
+        climbing_by_date[row_date] = {
+            "route_count": route_count,
+            "hardest_grade": hardest_grade,
+        }
+
+    # Climbing: venue type per day (check if mixed)
+    venue_stmt = (
+        select(Ascent.date, Crag.venue_type)
+        .join(Crag, Ascent.crag_id == Crag.id)
+        .where(Ascent.date >= first_day, Ascent.date <= last_day)
+        .group_by(Ascent.date, Crag.venue_type)
+    )
+    venue_result = await session.exec(venue_stmt)
+    venue_types_by_date: dict[datetime.date, set[str]] = {}
+    for row_date, venue_type in venue_result.all():
+        venue_types_by_date.setdefault(row_date, set()).add(venue_type.value if hasattr(venue_type, 'value') else venue_type)
+
+    # Endurance: activities per day
+    endurance_stmt = (
+        select(EnduranceActivity.date, EnduranceActivity.type, EnduranceActivity.duration_s)
+        .where(EnduranceActivity.date >= first_day, EnduranceActivity.date <= last_day)
+        .order_by(EnduranceActivity.date)
+    )
+    endurance_result = await session.exec(endurance_stmt)
+    endurance_by_date: dict[datetime.date, list[dict]] = {}
+    for row_date, act_type, duration_s in endurance_result.all():
+        endurance_by_date.setdefault(row_date, []).append(
+            {"type": act_type, "duration_s": duration_s}
+        )
+
+    # Build response
+    all_dates = sorted(set(list(climbing_by_date.keys()) + list(endurance_by_date.keys())))
+    days: list[CalendarDayEntry] = []
+    for d in all_dates:
+        climbing_day = None
+        if d in climbing_by_date:
+            venues = venue_types_by_date.get(d, set())
+            if len(venues) > 1:
+                venue_str = "mixed"
+            else:
+                venue_str = next(iter(venues)) if venues else "outdoor_crag"
+            climbing_day = CalendarClimbingDay(
+                route_count=climbing_by_date[d]["route_count"],
+                hardest_grade=climbing_by_date[d]["hardest_grade"],
+                venue_type=venue_str,
+            )
+
+        endurance_day = None
+        if d in endurance_by_date:
+            endurance_day = CalendarEnduranceDay(activities=endurance_by_date[d])
+
+        days.append(CalendarDayEntry(
+            date=d.isoformat(),
+            climbing=climbing_day,
+            endurance=endurance_day,
+        ))
+
+    return CalendarResponse(month=month, days=days)

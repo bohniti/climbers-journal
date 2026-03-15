@@ -327,13 +327,13 @@ DB: records persisted via normal CRUD path
 
 **Goal:** A unified weekly/monthly calendar showing all training at a glance.
 
-- [ ] Create `/calendar` page with week and month views
-- [ ] Each day cell shows:
+- [x] Create `/calendar` page with week and month views
+- [x] Each day cell shows:
   - Climbing: route count + hardest grade (color-coded by venue_type)
   - Endurance: activity type icon + duration
-- [ ] Click day → expands to show details or links to log view filtered by date
-- [ ] REST endpoint: `GET /calendar?month=2026-03` — returns aggregated data per day
-- [ ] Empty days are visually distinct (rest days are important too)
+- [x] Click day → expands to show details or links to log view filtered by date
+- [x] REST endpoint: `GET /calendar?month=2026-03` — returns aggregated data per day
+- [x] Empty days are visually distinct (rest days are important too)
 
 ---
 

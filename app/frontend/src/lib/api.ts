@@ -259,6 +259,38 @@ export async function fetchGradePyramid(
   return res.json();
 }
 
+// ── Calendar ─────────────────────────────────────────────────────────
+
+export interface CalendarClimbingDay {
+  route_count: number;
+  hardest_grade: string | null;
+  venue_type: string; // "outdoor_crag" | "indoor_gym" | "mixed"
+}
+
+export interface CalendarEnduranceDay {
+  activities: { type: string; duration_s: number }[];
+}
+
+export interface CalendarDayEntry {
+  date: string;
+  climbing: CalendarClimbingDay | null;
+  endurance: CalendarEnduranceDay | null;
+}
+
+export interface CalendarData {
+  month: string;
+  days: CalendarDayEntry[];
+}
+
+export async function fetchCalendar(month: string): Promise<CalendarData> {
+  const res = await fetch(`${API_BASE}/stats/calendar?month=${month}`);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to fetch calendar (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
 // ── Activities (Endurance) ────────────────────────────────────────────
 
 export interface ActivityResponse {

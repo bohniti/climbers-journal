@@ -5,12 +5,14 @@ from datetime import date, timedelta
 import pytest
 
 from climbers_journal.models.climbing import TickType, VenueType
+from climbers_journal.models.endurance import ActivitySource, EnduranceActivity
 from climbers_journal.routers.stats import (
     _build_climbing_stats,
     _build_endurance_stats,
     _build_grade_pyramid,
     _recent_climbing,
     _recent_endurance,
+    get_calendar,
 )
 from climbers_journal.services.climbing import create_climbing_session
 
@@ -178,3 +180,97 @@ async def test_recent_endurance_empty(session):
     today = date.today()
     recent = await _recent_endurance(session, today - timedelta(days=7), today)
     assert recent == []
+
+
+# ── Calendar ─────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_calendar_empty(session):
+    today = date.today()
+    month_str = f"{today.year}-{today.month:02d}"
+    result = await get_calendar(month=month_str, session=session)
+    assert result.month == month_str
+    assert result.days == []
+
+
+@pytest.mark.asyncio
+async def test_calendar_with_climbing(session):
+    today = date.today()
+    month_str = f"{today.year}-{today.month:02d}"
+
+    await create_climbing_session(
+        session,
+        crag_name="Test Crag",
+        crag_country="Germany",
+        venue_type=VenueType.outdoor_crag,
+        ascents_data=[
+            {"route_name": "R1", "grade": "7a", "tick_type": TickType.redpoint, "date": today},
+            {"route_name": "R2", "grade": "8a", "tick_type": TickType.onsight, "date": today},
+        ],
+    )
+    await session.commit()
+
+    result = await get_calendar(month=month_str, session=session)
+    assert len(result.days) == 1
+    day = result.days[0]
+    assert day.date == today.isoformat()
+    assert day.climbing is not None
+    assert day.climbing.route_count == 2
+    assert day.climbing.venue_type == "outdoor_crag"
+
+
+@pytest.mark.asyncio
+async def test_calendar_with_endurance(session):
+    today = date.today()
+    month_str = f"{today.year}-{today.month:02d}"
+
+    activity = EnduranceActivity(
+        intervals_id="test-1",
+        date=today,
+        type="Run",
+        name="Morning Run",
+        duration_s=3600,
+        distance_m=10000,
+        source=ActivitySource.intervals_icu,
+    )
+    session.add(activity)
+    await session.commit()
+
+    result = await get_calendar(month=month_str, session=session)
+    assert len(result.days) == 1
+    day = result.days[0]
+    assert day.endurance is not None
+    assert len(day.endurance.activities) == 1
+    assert day.endurance.activities[0]["type"] == "Run"
+    assert day.endurance.activities[0]["duration_s"] == 3600
+
+
+@pytest.mark.asyncio
+async def test_calendar_mixed_venue_types(session):
+    today = date.today()
+    month_str = f"{today.year}-{today.month:02d}"
+
+    await create_climbing_session(
+        session,
+        crag_name="Outdoor Crag",
+        crag_country="Germany",
+        venue_type=VenueType.outdoor_crag,
+        ascents_data=[
+            {"route_name": "R1", "grade": "7a", "tick_type": TickType.redpoint, "date": today},
+        ],
+    )
+    await create_climbing_session(
+        session,
+        crag_name="Indoor Gym",
+        crag_country="Germany",
+        venue_type=VenueType.indoor_gym,
+        ascents_data=[
+            {"grade": "6b", "tick_type": TickType.flash, "date": today},
+        ],
+    )
+    await session.commit()
+
+    result = await get_calendar(month=month_str, session=session)
+    assert len(result.days) == 1
+    assert result.days[0].climbing.venue_type == "mixed"
