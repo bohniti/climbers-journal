@@ -92,6 +92,14 @@ POST /chat
 
 Conversations stored in-memory (dict of message lists) for now. When we add a database, we persist instead — API contract stays the same.
 
+### LLM provider isolation (future-proofing note)
+
+The MVP uses a single LLM (Kimi K2.5 via Nvidia NIM, OpenAI-compatible `chat.completions.create`). The LLM logic lives entirely in `services/llm.py` — the tool registry, chat router, and frontend have no knowledge of which model is used.
+
+When multiple LLMs are needed, extract a `LLMProvider` interface from `llm.py` with per-provider implementations (NvidiaNIM, Anthropic, OpenAI, etc.). Each provider normalizes its API differences (chat completions vs. messages API vs. responses API) behind a common `chat(messages, tools)` method. The rest of the architecture stays untouched.
+
+Do **not** build this abstraction until a second provider is actually needed.
+
 ### Non-streaming first, SSE-ready
 
 MVP returns a complete JSON response. The endpoint path and frontend are designed so we can add `POST /chat/stream` (SSE) alongside without breaking the existing contract.
@@ -157,10 +165,10 @@ CORS_ORIGINS=["http://localhost:3000"]
 - [x] Commit: `feat(PROJ-1): intervals.icu client and tool registry`
 
 ### Step 3 — LLM chat endpoint
-- [ ] Implement `app/backend/climbers_journal/services/llm.py` — Kimi K2.5 via openai SDK, tool call loop (call → tool_call → dispatch → re-submit → repeat until text)
-- [ ] Implement `app/backend/climbers_journal/routers/chat.py` — `POST /chat` with `conversation_id` + in-memory conversation store
-- [ ] Wire router in `main.py`
-- [ ] Commit: `feat(PROJ-1): LLM chat endpoint with tool use loop`
+- [x] Implement `app/backend/climbers_journal/services/llm.py` — Kimi K2.5 via openai SDK, tool call loop (call → tool_call → dispatch → re-submit → repeat until text)
+- [x] Implement `app/backend/climbers_journal/routers/chat.py` — `POST /chat` with `conversation_id` + in-memory conversation store
+- [x] Wire router in `main.py`
+- [x] Commit: `feat(PROJ-1): LLM chat endpoint with tool use loop`
 
 ### Step 4 — Frontend chat UI
 - [ ] Build `app/frontend/src/app/page.tsx` — chat interface (message list + input, auto-scroll, loading state)
