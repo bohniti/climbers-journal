@@ -52,6 +52,12 @@ All features tracked in `features/INDEX.md`. Every skill reads it at start and u
 # Backend
 cd app/backend && uv run fastapi dev climbers_journal/main.py
 
+# Backend tests
+cd app/backend && uv run pytest
+
+# Alembic migrations
+cd app/backend && uv run alembic upgrade head
+
 # Frontend
 cd app/frontend && pnpm dev
 ```
