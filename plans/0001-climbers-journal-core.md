@@ -225,9 +225,9 @@ DB: records persisted via normal CRUD path
 
 **Goal:** Import existing climbing ticks from a harmonized CSV.
 
-- [ ] Define expected CSV schema (columns, types, required fields)
-- [ ] Enforce 5MB file size limit at endpoint level
-- [ ] Create import service in `climbers_journal/services/import_csv.py`:
+- [x] Define expected CSV schema (columns, types, required fields)
+- [x] Enforce 5MB file size limit at endpoint level
+- [x] Create import service in `climbers_journal/services/import_csv.py`:
   - Stream-parse with `csv.reader` (don't load entire file into memory)
   - Validate rows, collect errors per row
   - Create-or-find crag → area → route hierarchy (uses `name_normalized` matching)
@@ -235,8 +235,8 @@ DB: records persisted via normal CRUD path
   - Create ascent records via climbing service (inherits dedup logic — eng review #9)
   - Batch inserts (100 rows per commit)
   - Return import report: `{created: N, skipped: N, rows_imported: N, errors: [{row: N, reason: str}]}` — includes last successful row for resume on partial failure (eng review #16)
-- [ ] Create endpoint `POST /import/climbing-csv` — upload + process
-- [ ] Tests: happy path, invalid rows, dedup, file size limit, partial failure
+- [x] Create endpoint `POST /import/climbing-csv` — upload + process
+- [x] Tests: happy path, invalid rows, dedup, file size limit, partial failure
 
 ### Step 5: Copilot Record Tools + Draft Card
 **Feature:** PROJ-8a
