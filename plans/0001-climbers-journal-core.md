@@ -206,19 +206,19 @@ DB: records persisted via normal CRUD path
 
 **Goal:** Sync intervals.icu activities into the local DB with retry handling.
 
-- [ ] Create `EnduranceActivity` SQLModel in `climbers_journal/models/`
-- [ ] Create Alembic migration
-- [ ] Create sync service in `climbers_journal/services/sync.py`:
+- [x] Create `EnduranceActivity` SQLModel in `climbers_journal/models/`
+- [x] Create Alembic migration
+- [x] Create sync service in `climbers_journal/services/sync.py`:
   - Pull activities from intervals.icu for a date range
   - Upsert by `intervals_id` (idempotent)
   - Store full payload in `raw_data` JSONB
   - Exponential backoff on HTTP 429 (retry 3x with 1s/2s/4s delays)
   - Paginate by month for date ranges > 90 days
   - **Commit per month-chunk** — partial failure returns structured report: `{synced: [...], failed: "YYYY-MM", error: "..."}` (eng review #7)
-- [ ] Create endpoint `POST /sync/intervals` — trigger a sync for a date range
-- [ ] Create endpoint `GET /activities` — list endurance activities with filters + pagination
-- [ ] Log sync start/end/error with activity count
-- [ ] Tests: upsert idempotency, 429 retry (mock httpx), partial failure reporting
+- [x] Create endpoint `POST /sync/intervals` — trigger a sync for a date range
+- [x] Create endpoint `GET /activities` — list endurance activities with filters + pagination
+- [x] Log sync start/end/error with activity count
+- [x] Tests: upsert idempotency, 429 retry (mock httpx), partial failure reporting
 
 ### Step 4: CSV Import for Climbing History
 **Feature:** PROJ-5

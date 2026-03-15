@@ -8,11 +8,17 @@ from climbers_journal.models.climbing import (
     TickType,
     VenueType,
 )
+from climbers_journal.models.endurance import (
+    ActivitySource,
+    EnduranceActivity,
+)
 
 __all__ = [
+    "ActivitySource",
     "Area",
     "Ascent",
     "Crag",
+    "EnduranceActivity",
     "GradeSystem",
     "Route",
     "RouteStyle",

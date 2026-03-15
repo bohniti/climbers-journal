@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 
 from climbers_journal.routers.chat import router as chat_router  # noqa: E402
 from climbers_journal.routers.climbing import router as climbing_router  # noqa: E402
+from climbers_journal.routers.sync import router as sync_router  # noqa: E402
 
 app = FastAPI(title="Climbers Journal", version="0.1.0")
 
@@ -25,6 +26,7 @@ app.add_middleware(
 
 app.include_router(chat_router)
 app.include_router(climbing_router)
+app.include_router(sync_router)
 
 
 @app.get("/health")
