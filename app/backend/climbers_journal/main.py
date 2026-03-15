@@ -2,12 +2,13 @@ import json
 import os
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-from climbers_journal.routers.chat import router as chat_router
 
 load_dotenv()
+
+from fastapi import FastAPI  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+
+from climbers_journal.routers.chat import router as chat_router  # noqa: E402
 
 app = FastAPI(title="Climbers Journal", version="0.1.0")
 
