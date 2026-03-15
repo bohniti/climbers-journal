@@ -271,12 +271,12 @@ DB: records persisted via normal CRUD path
 
 **Goal:** Replace chat-only UI with a journal view as the primary screen.
 
-- [ ] Create `/log` page — chronological list of all activities (climbing + endurance)
-- [ ] Activity cards: show type icon, name/route, grade/distance, date
-- [ ] Filter bar: date range, activity type (climbing/endurance), tick type
-- [ ] Pagination (infinite scroll or page numbers)
-- [ ] Click-through to detail view
-- [ ] Keep `/chat` as the copilot (move from root to `/chat`)
+- [x] Create `/log` page — chronological list of all activities (climbing + endurance)
+- [x] Activity cards: show type icon, name/route, grade/distance, date
+- [x] Filter bar: date range, activity type (climbing/endurance), tick type
+- [x] Pagination (infinite scroll or page numbers)
+- [x] Click-through to detail view
+- [x] Keep `/chat` as the copilot (move from root to `/chat`)
 
 ### Step 7: Frontend — Add Climbing Session Form
 **Feature:** PROJ-7
