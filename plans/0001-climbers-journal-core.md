@@ -297,13 +297,13 @@ DB: records persisted via normal CRUD path
 
 **Goal:** Extend the LLM tool registry to query the local DB for stats and insights.
 
-- [ ] New tool module `climbers_journal/tools/journal.py`:
+- [x] New tool module `climbers_journal/tools/journal.py`:
   - `search_routes` — find routes by name, grade, crag
   - `get_ascents` — query ascents with filters (date, grade, tick_type, crag)
   - `get_climbing_stats` — summary stats (sends by grade, onsight rate, volume over time)
   - `get_training_overview` — combined view: climbing volume + endurance load for a period
-- [ ] Register tools in registry
-- [ ] Update system prompt to describe both data sources (intervals.icu live + local journal)
+- [x] Register tools in registry
+- [x] Update system prompt to describe both data sources (intervals.icu live + local journal)
 
 ### Step 9: Frontend — Dashboard
 **Feature:** PROJ-9

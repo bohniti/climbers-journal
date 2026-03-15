@@ -5,10 +5,11 @@ from __future__ import annotations
 from typing import Any
 
 from climbers_journal.tools import intervals as intervals_tools
+from climbers_journal.tools import journal as journal_tools
 from climbers_journal.tools import record as record_tools
 
 # All tool modules. Add new modules here.
-_MODULES = [intervals_tools, record_tools]
+_MODULES = [intervals_tools, journal_tools, record_tools]
 
 
 def get_all_definitions() -> list[dict[str, Any]]:
