@@ -10,6 +10,28 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from climbers_journal.models.climbing import normalize_name, suggest_grade_system
 from climbers_journal.services.climbing import find_crag_by_name, list_routes
 
+# Map common climbing synonyms to valid TickType values
+TICK_TYPE_ALIASES: dict[str, str] = {
+    "send": "redpoint",
+    "sent": "redpoint",
+    "topped": "redpoint",
+    "completed": "redpoint",
+    "clean": "redpoint",
+    "worked": "attempt",
+    "fell": "attempt",
+    "project": "attempt",
+    "projected": "attempt",
+    "dogged": "hang",
+    "hung": "hang",
+}
+
+
+def _normalize_tick_type(raw: str) -> str:
+    """Map common climbing synonyms to valid TickType enum values."""
+    lowered = raw.strip().lower()
+    return TICK_TYPE_ALIASES.get(lowered, lowered)
+
+
 definitions: list[dict[str, Any]] = [
     {
         "type": "function",
@@ -66,7 +88,13 @@ definitions: list[dict[str, Any]] = [
                                         "attempt",
                                         "hang",
                                     ],
-                                    "description": "How the route was climbed.",
+                                    "description": (
+                                        "How the route was climbed. Use 'onsight' (first try, no beta), "
+                                        "'flash' (first try with beta), 'redpoint' (sent after working it / "
+                                        "any clean send), 'repeat' (already sent before), 'attempt' (did not "
+                                        "complete), or 'hang' (hung on rope but continued). "
+                                        "Do NOT use 'send' — use 'redpoint' instead."
+                                    ),
                                 },
                                 "tries": {
                                     "type": "integer",
@@ -135,7 +163,7 @@ async def _build_draft(arguments: dict[str, Any], session: AsyncSession | None) 
     ascent_drafts = []
     for a in arguments.get("ascents", []):
         draft: dict[str, Any] = {
-            "tick_type": a["tick_type"],
+            "tick_type": _normalize_tick_type(a["tick_type"]),
             "tries": a.get("tries"),
             "notes": a.get("notes"),
             "style": a.get("style", "sport"),
