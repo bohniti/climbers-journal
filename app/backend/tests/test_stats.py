@@ -13,6 +13,7 @@ from climbers_journal.routers.stats import (
     _recent_climbing,
     _recent_endurance,
     get_calendar,
+    get_weekly,
 )
 from climbers_journal.services.climbing import create_climbing_session
 
@@ -274,3 +275,106 @@ async def test_calendar_mixed_venue_types(session):
     result = await get_calendar(month=month_str, session=session)
     assert len(result.days) == 1
     assert result.days[0].climbing.venue_type == "mixed"
+
+
+# ── Weekly Activity ──────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_weekly_empty(session):
+    today = date.today()
+    monday = today - timedelta(days=today.weekday())
+    result = await get_weekly(week_start=monday.isoformat(), session=session)
+    assert len(result.days) == 7
+    assert all(d.climbing_count == 0 for d in result.days)
+    assert all(d.endurance_activities == [] for d in result.days)
+    assert result.session_streak == 0
+
+
+@pytest.mark.asyncio
+async def test_weekly_mixed_data(session):
+    today = date.today()
+    monday = today - timedelta(days=today.weekday())
+
+    await create_climbing_session(
+        session,
+        crag_name="Crag",
+        crag_country="Germany",
+        venue_type=VenueType.outdoor_crag,
+        ascents_data=[
+            {"route_name": "R1", "grade": "7a", "tick_type": TickType.redpoint, "date": monday},
+            {"route_name": "R2", "grade": "6c", "tick_type": TickType.flash, "date": monday},
+        ],
+    )
+    activity = EnduranceActivity(
+        intervals_id="test-weekly-1",
+        date=monday,
+        type="Run",
+        name="Morning Run",
+        duration_s=3600,
+        source=ActivitySource.intervals_icu,
+    )
+    session.add(activity)
+    await session.commit()
+
+    result = await get_weekly(week_start=monday.isoformat(), session=session)
+    assert len(result.days) == 7
+
+    # Monday should have 2 climbs and 1 endurance
+    mon_day = result.days[0]
+    assert mon_day.climbing_count == 2
+    assert len(mon_day.ascents) == 2
+    assert len(mon_day.endurance_activities) == 1
+    assert mon_day.endurance_activities[0].type == "Run"
+
+    # Other days should be empty
+    for d in result.days[1:]:
+        assert d.climbing_count == 0
+
+
+@pytest.mark.asyncio
+async def test_weekly_climbing_only_day(session):
+    today = date.today()
+    # Use last week to avoid future-date validation
+    last_monday = today - timedelta(days=today.weekday() + 7)
+    climb_day = last_monday + timedelta(days=2)  # Wednesday of last week
+
+    await create_climbing_session(
+        session,
+        crag_name="Crag",
+        crag_country="Germany",
+        venue_type=VenueType.indoor_gym,
+        ascents_data=[
+            {"route_name": "Boulder1", "grade": "6a", "tick_type": TickType.onsight, "date": climb_day},
+        ],
+    )
+    await session.commit()
+
+    result = await get_weekly(week_start=last_monday.isoformat(), session=session)
+    wed_day = result.days[2]
+    assert wed_day.climbing_count == 1
+    assert wed_day.endurance_activities == []
+
+
+@pytest.mark.asyncio
+async def test_weekly_session_streak(session):
+    today = date.today()
+    monday = today - timedelta(days=today.weekday())
+    month_start = date(today.year, today.month, 1)
+
+    # Create sessions on 3 different days this month
+    for i in range(3):
+        d = month_start + timedelta(days=i)
+        await create_climbing_session(
+            session,
+            crag_name="Crag",
+            crag_country="Germany",
+            venue_type=VenueType.outdoor_crag,
+            ascents_data=[
+                {"route_name": f"R{i}", "grade": "6a", "tick_type": TickType.redpoint, "date": d},
+            ],
+        )
+    await session.commit()
+
+    result = await get_weekly(week_start=monday.isoformat(), session=session)
+    assert result.session_streak == 3
