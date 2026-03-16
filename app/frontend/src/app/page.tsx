@@ -17,6 +17,7 @@ import {
   formatDate,
 } from "@/lib/constants";
 import WeeklyActivity from "@/components/WeeklyActivity";
+import OnboardingTour, { useOnboardingTour, resetOnboarding } from "@/components/OnboardingTour";
 
 // ── Component ────────────────────────────────────────────────────────
 
@@ -28,6 +29,18 @@ export default function DashboardPage() {
   const [venueFilter, setVenueFilter] = useState<string>("");
   const [periodFilter, setPeriodFilter] = useState<string>("");
   const [pyramid, setPyramid] = useState<GradePyramidEntry[]>([]);
+
+  const { showTour, startTour, closeTour } = useOnboardingTour();
+
+  // Listen for "Show tutorial" button in Nav
+  useEffect(() => {
+    const handler = () => {
+      resetOnboarding();
+      startTour();
+    };
+    window.addEventListener("start-onboarding-tour", handler);
+    return () => window.removeEventListener("start-onboarding-tour", handler);
+  }, [startTour]);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -89,6 +102,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex-1 overflow-y-auto">
+      <OnboardingTour show={showTour} onClose={closeTour} />
       <div className="mx-auto max-w-4xl px-4 py-6">
         {/* Quick actions */}
         <div className="mb-6 flex items-center gap-3">

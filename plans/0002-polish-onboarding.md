@@ -212,7 +212,7 @@ These exact values are consumed by the `OnboardingTour` component in Issue #5. A
 - [x] Update input/form styles — slate-800 bg, emerald focus ring
 - [x] Update chat bubbles — emerald user messages, slate assistant messages
 - [x] Add `data-tour-step` attributes per the table above
-- [ ] Verify dark-on-dark readability across all pages
+- [ ] Verify dark-on-dark readability across all pages (deferred to QA)
 
 ---
 
@@ -308,13 +308,13 @@ Below the chart, expandable day rows listing activities for that day with type b
 **Implementation:** Simple component with fixed positioning, backdrop, and a highlight box around the target element. No external tour library. Scroll to target if not visible.
 
 ### Tasks
-- [ ] Create `OnboardingTour` component — step-through overlay with highlight + description
-- [ ] Target elements via `data-tour-step` attributes (placed in Issue #2)
-- [ ] Scroll to target element if not visible in viewport
-- [ ] Track completion in localStorage (`onboarding_complete: true`)
-- [ ] Show tour on first dashboard visit if not completed
-- [ ] Add "Show tutorial" button in nav to replay tour (resets localStorage flag)
-- [ ] Style overlay with slate/emerald theme (semi-transparent backdrop, emerald highlight border)
+- [x] Create `OnboardingTour` component — step-through overlay with highlight + description
+- [x] Target elements via `data-tour-step` attributes (placed in Issue #2)
+- [x] Scroll to target element if not visible in viewport
+- [x] Track completion in localStorage (`onboarding_complete: true`)
+- [x] Show tour on first dashboard visit if not completed
+- [x] Add "Show tutorial" button in nav to replay tour (resets localStorage flag)
+- [x] Style overlay with slate/emerald theme (semi-transparent backdrop, emerald highlight border)
 
 ---
 

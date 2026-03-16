@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const links = [
   { href: "/", label: "Dashboard", exact: true, tourStep: undefined },
@@ -13,6 +13,17 @@ const links = [
 
 export default function Nav() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  function handleShowTutorial() {
+    if (pathname !== "/") {
+      router.push("/");
+    }
+    // Dispatch event after a tick so the dashboard page can pick it up
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("start-onboarding-tour"));
+    }, pathname === "/" ? 0 : 300);
+  }
 
   return (
     <header className="flex shrink-0 items-center justify-between border-b border-slate-700 px-6 py-3">
@@ -22,7 +33,7 @@ export default function Nav() {
       >
         Climbers Journal
       </Link>
-      <nav className="flex gap-1">
+      <nav className="flex items-center gap-1">
         {links.map(({ href, label, exact, tourStep }) => {
           const active = exact ? pathname === href : pathname.startsWith(href);
           return (
@@ -40,6 +51,13 @@ export default function Nav() {
             </Link>
           );
         })}
+        <button
+          onClick={handleShowTutorial}
+          className="ml-2 rounded-md px-2 py-1.5 text-sm text-slate-500 transition-colors hover:bg-slate-800/50 hover:text-slate-300"
+          title="Show tutorial"
+        >
+          ?
+        </button>
       </nav>
     </header>
   );
