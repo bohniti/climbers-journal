@@ -399,7 +399,7 @@ async def create_climbing_session(
             route, _ = await create_or_find_route(
                 session,
                 name=item["route_name"],
-                grade=item.get("grade", "?"),
+                grade=item.get("grade") or "?",
                 crag_id=crag.id,  # type: ignore[arg-type]
                 area_id=area_id,
                 style=RouteStyle(item["style"]) if item.get("style") else RouteStyle.sport,
