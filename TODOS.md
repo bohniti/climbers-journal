@@ -29,13 +29,6 @@ Deferred work from plan reviews. Each item has context so it can be picked up in
 
 ## P3 — Nice to Have
 
-### Session Streak Counter
-**What:** Dashboard widget showing "You've logged N sessions this month."
-**Why:** Motivational nudge. Trivial query (COUNT ascents WHERE date >= month_start).
-**Effort:** S
-**Depends on:** Dashboard (PROJ-9)
-**Context:** Quick polish item for post-launch.
-
 ### Photo Attachments on Ascents
 **What:** Attach beta photos or summit pics to ascent records.
 **Why:** Visual memory of climbs. Common feature in Mountain Project / The Crag.

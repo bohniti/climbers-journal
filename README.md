@@ -6,19 +6,21 @@ A local-first training journal with an LLM assistant that connects to your [inte
 
 - Python 3.12+ with [uv](https://docs.astral.sh/uv/)
 - Node.js 22+ with [pnpm](https://pnpm.io/)
+- PostgreSQL 16+ (`brew install postgresql@16`)
 - An [intervals.icu](https://intervals.icu) account with an API key
 - At least one LLM provider API key (Nvidia NIM for Kimi K2.5, or Google AI for Gemini)
 
 ## Setup
 
 ```bash
-# Clone and configure
-cp .env.example .env
-# Edit .env with your API keys
+# Start PostgreSQL and create the database (one-time)
+brew services start postgresql@16
+createdb climbers_journal
 
-# Install backend dependencies
+# Install backend dependencies and run migrations
 cd app/backend
 uv sync
+uv run alembic upgrade head
 
 # Install frontend dependencies
 cd ../frontend
@@ -40,6 +42,14 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) and start chatting.
+
+## Dev Reset
+
+To stop all processes, wipe the database, and re-run migrations:
+
+```bash
+./scripts/dev-reset.sh
+```
 
 ## Claude Code (gstack)
 
@@ -66,6 +76,7 @@ Requires [bun](https://bun.sh/). This gives you these slash commands in Claude C
 
 | Variable | Required | Description |
 |---|---|---|
+| `DATABASE_URL` | No | PostgreSQL connection (default: `postgresql+asyncpg://localhost:5432/climbers_journal`) |
 | `NVIDIA_API_KEY` | One of these | Kimi K2.5 via Nvidia NIM |
 | `GOOGLE_API_KEY` | One of these | Gemini via Google AI |
 | `DEFAULT_LLM_PROVIDER` | No | `kimi` or `gemini` (default: `kimi`) |
