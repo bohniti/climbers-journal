@@ -6,12 +6,12 @@ Deferred work from plan reviews. Each item has context so it can be picked up in
 
 ## P2 — Should Do
 
-### Name Propagation on Rename
-**What:** When a crag or route is renamed (PUT /crags/{id}, PUT /routes/{id}), update all denormalized `crag_name`/`route_name` fields on related Ascent records.
-**Why:** Decision 14B denormalized route/crag names onto Ascent for read performance. Without propagation, renames leave stale names on ascent records.
+### Make session_id NOT NULL
+**What:** Follow-up migration to add NOT NULL constraint on `ascent.session_id` after verifying all ascents have been backfilled.
+**Why:** Nullable FK is a migration compromise. Once verified, making it NOT NULL prevents orphan ascents from being created.
 **Effort:** S
-**Depends on:** Climbing model (PROJ-3) with denormalized names
-**Context:** From eng review Issue 14. Not needed until a rename/edit UI exists, but the climbing service's update methods should propagate name changes. Simple `UPDATE ascent SET crag_name = X WHERE crag_id = Y`.
+**Depends on:** Plan 0003 fully implemented + migration verified via `/stats/health` showing 0 orphans
+**Context:** From eng review of plan 0003. The backfill migration groups existing ascents by (date, crag_id). After running and verifying, a follow-up Alembic migration adds the NOT NULL constraint.
 
 ### Docker Compose + CI/CD + Deployment
 **What:** Dockerfiles for backend + frontend, docker-compose.yml (dev + prod), GitHub Actions pipeline, Hostinger VPS deployment.

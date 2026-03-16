@@ -6,7 +6,7 @@
 
 - **Backend:** FastAPI, Python 3.12+, managed with `uv`
 - **Frontend:** Next.js 15 App Router, TypeScript, Tailwind CSS, managed with `pnpm`
-- **LLM:** Kimi K2.5 via Nvidia NIM (OpenAI-compatible, `openai` Python SDK)
+- **LLM:** Configurable via `config.yaml` — Gemini 2.5 Flash Lite (default), Kimi K2.5 via Nvidia NIM (OpenAI-compatible, `openai` Python SDK)
 - **Package Managers:** `uv` (Python), `pnpm` (Node)
 - **Integrations:** intervals.icu REST API
 

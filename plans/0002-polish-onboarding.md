@@ -212,7 +212,7 @@ These exact values are consumed by the `OnboardingTour` component in Issue #5. A
 - [x] Update input/form styles — slate-800 bg, emerald focus ring
 - [x] Update chat bubbles — emerald user messages, slate assistant messages
 - [x] Add `data-tour-step` attributes per the table above
-- [ ] Verify dark-on-dark readability across all pages (deferred to QA)
+- [x] Verify dark-on-dark readability across all pages (verified during PROJ-15 QA)
 
 ---
 

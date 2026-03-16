@@ -8,7 +8,7 @@ A local-first training journal with an LLM assistant that connects to your [inte
 - Node.js 22+ with [pnpm](https://pnpm.io/)
 - PostgreSQL 16+ (`brew install postgresql@16`)
 - An [intervals.icu](https://intervals.icu) account with an API key
-- At least one LLM provider API key (Nvidia NIM for Kimi K2.5, or Google AI for Gemini)
+- At least one LLM provider API key (Google AI for Gemini recommended, or Nvidia NIM for Kimi K2.5)
 
 ## Setup
 
@@ -21,6 +21,10 @@ createdb climbers_journal
 cd app/backend
 uv sync
 uv run alembic upgrade head
+
+# Copy config templates and fill in your values
+cp config.yaml.example config.yaml  # non-secret app config (LLM provider, intervals.icu settings)
+cp ../../.env.example ../../.env     # secrets only (API keys, DB URL)
 
 # Install frontend dependencies
 cd ../frontend
@@ -72,14 +76,16 @@ Requires [bun](https://bun.sh/). This gives you these slash commands in Claude C
 | `/setup-browser-cookies` | Import browser cookies for authenticated testing |
 | `/retro` | Weekly engineering retrospective |
 
-## Environment Variables
+## Configuration
+
+Non-secret config lives in `app/backend/config.yaml` (LLM provider, model, intervals.icu base URL, CORS origins). See `config.yaml.example` for the full schema. If missing, sensible defaults are used.
+
+Secrets live in `.env` at the project root:
 
 | Variable | Required | Description |
 |---|---|---|
 | `DATABASE_URL` | No | PostgreSQL connection (default: `postgresql+asyncpg://localhost:5432/climbers_journal`) |
+| `GOOGLE_API_KEY` | One of these | Gemini via Google AI (default provider) |
 | `NVIDIA_API_KEY` | One of these | Kimi K2.5 via Nvidia NIM |
-| `GOOGLE_API_KEY` | One of these | Gemini via Google AI |
-| `DEFAULT_LLM_PROVIDER` | No | `kimi` or `gemini` (default: `kimi`) |
 | `INTERVALS_API_KEY` | Yes | intervals.icu API key |
 | `INTERVALS_ATHLETE_ID` | Yes | intervals.icu athlete ID (e.g. `i12345`) |
-| `CORS_ORIGINS` | No | JSON array (default: `["http://localhost:3000"]`) |

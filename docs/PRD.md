@@ -6,18 +6,32 @@ Athletes who climb use generic training platforms (Strava, Garmin, intervals.icu
 
 ## Solution
 
-A local-first training journal with an LLM assistant that connects to your existing training data (starting with intervals.icu) and lets you query it conversationally. Ask about your latest activity, training trends, or weekly load — the LLM fetches the data and responds.
+A local-first training journal with an LLM assistant that connects to your existing training data (intervals.icu) and lets you query it conversationally. Log climbing sessions, import history, sync endurance activities, and ask the copilot about your training — it fetches the data and responds.
 
-## MVP Scope
+## Current Capabilities
 
-- Chat UI (Next.js) connected to a FastAPI backend
-- LLM (Kimi K2.5) with tool use to query intervals.icu
-- Tools: get latest activity, get recent activities, get wellness/load data
-- Runs locally, no auth, no database
+- **Chat copilot** — conversational LLM assistant with tool use (record sessions, query data)
+- **Climbing CRUD** — log sessions with routes, grades, tick types; grade auto-suggest
+- **Endurance sync** — import activities from intervals.icu with retry
+- **CSV import** — bulk import climbing history from CSV files
+- **Dashboard** — stats cards, grade pyramid, weekly activity chart with day accordion
+- **Training calendar** — month/week views of all activities
+- **Activity log** — filterable, paginated view of all sessions
+- **Data import page** — guided import for climbing CSV + intervals.icu sync
+- **Onboarding tour** — first-run tooltip walkthrough of core features
+- **Configurable LLM** — YAML config file supporting multiple providers (Gemini default, Kimi K2.5)
+- **PostgreSQL persistence** — SQLModel + Alembic migrations
+
+## Tech Stack
+
+- **Backend:** FastAPI, Python 3.12+, PostgreSQL, SQLModel, Alembic
+- **Frontend:** Next.js 15 App Router, TypeScript, Tailwind CSS, Recharts
+- **LLM:** Configurable via `config.yaml` — Gemini 2.5 Flash Lite (default), Kimi K2.5 via Nvidia NIM
+- **Integrations:** intervals.icu REST API
 
 ## Future Direction
 
-- Climbing-specific activity logging (grades, ascents, projects)
 - Training load analytics (CTL/ATL/TSB) with climbing-aware metrics
-- Database persistence, user auth, deployment
+- User auth and multi-user support
+- Deployment (Docker, CI/CD)
 - Garmin/GPX import, interactive crag maps
