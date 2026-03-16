@@ -16,6 +16,7 @@ import {
   formatDuration,
   formatDate,
 } from "@/lib/constants";
+import WeeklyActivity from "@/components/WeeklyActivity";
 
 // ── Component ────────────────────────────────────────────────────────
 
@@ -194,6 +195,9 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Weekly Activity Chart */}
+        <WeeklyActivity />
 
         {/* Grade Pyramid */}
         <div className="mb-6 rounded-xl border border-slate-700 bg-slate-900 p-4">
