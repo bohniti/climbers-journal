@@ -24,5 +24,7 @@ You are an engineer implementing the next uncompleted step from the latest plan.
 3. **Update `features/INDEX.md`** — if feature status changed
 4. **Update `docs/PRD.md`** — if scope changed
 5. **REVIEW** Before you commit use the /review. Distiguigsh if bugs are critical or if you can just add them to the current active plan and revisit it later. 
-6. **Clean** Clean up all open and running process and services before you commit. The objetive is that the next developer on this machine has a clean state. 
-6. **Commit** — using the commit message specified in the plan step
+6. **Clean** Clean up all open and running process and services before you commit. The objetive is that the next developer on this machine has a clean state. /clear the current context window. 
+7. **Commit** /ship the product and push this feature /clear the context window
+8. **Quality Control**Check to which branch we shiped and do a /qa at local host. Start the app if needed and use /browse to enage with it even more and check if it was fullied. Write down in the plan what worked and what has not worked.
+10. **Retro**' /retro check at the plan and the results of the Quality Control and /clear the context window again.

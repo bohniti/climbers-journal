@@ -411,3 +411,115 @@ async def get_calendar(
         ))
 
     return CalendarResponse(month=month, days=days)
+
+
+# ── Weekly Activity ──────────────────────────────────────────────────
+
+
+class WeeklyAscentItem(BaseModel):
+    route_name: str | None
+    grade: str | None
+    tick_type: str
+
+
+class WeeklyEnduranceItem(BaseModel):
+    type: str
+    name: str | None
+    duration_s: int
+
+
+class WeeklyDayEntry(BaseModel):
+    date: str  # YYYY-MM-DD
+    climbing_count: int = 0
+    ascents: list[WeeklyAscentItem] = []
+    endurance_activities: list[WeeklyEnduranceItem] = []
+
+
+class WeeklyResponse(BaseModel):
+    week_start: str  # YYYY-MM-DD (Monday)
+    days: list[WeeklyDayEntry]
+    session_streak: int  # sessions logged this month
+
+
+@router.get("/weekly", response_model=WeeklyResponse)
+async def get_weekly(
+    week_start: str | None = Query(
+        None,
+        description="ISO date of Monday (defaults to current week)",
+        pattern=r"^\d{4}-\d{2}-\d{2}$",
+    ),
+    session: AsyncSession = Depends(get_session),
+):
+    if week_start:
+        monday = datetime.date.fromisoformat(week_start)
+    else:
+        today = datetime.date.today()
+        monday = today - datetime.timedelta(days=today.weekday())
+
+    sunday = monday + datetime.timedelta(days=6)
+
+    # Ascents for the week
+    ascent_stmt = (
+        select(Ascent)
+        .where(Ascent.date >= monday, Ascent.date <= sunday)
+        .order_by(Ascent.date)
+    )
+    ascent_result = await session.exec(ascent_stmt)
+    ascents_by_date: dict[datetime.date, list[Ascent]] = {}
+    for a in ascent_result.all():
+        ascents_by_date.setdefault(a.date, []).append(a)
+
+    # Endurance activities for the week
+    endurance_stmt = (
+        select(EnduranceActivity)
+        .where(EnduranceActivity.date >= monday, EnduranceActivity.date <= sunday)
+        .order_by(EnduranceActivity.date)
+    )
+    endurance_result = await session.exec(endurance_stmt)
+    endurance_by_date: dict[datetime.date, list[EnduranceActivity]] = {}
+    for e in endurance_result.all():
+        endurance_by_date.setdefault(e.date, []).append(e)
+
+    # Build 7-day response
+    days: list[WeeklyDayEntry] = []
+    for i in range(7):
+        d = monday + datetime.timedelta(days=i)
+        day_ascents = ascents_by_date.get(d, [])
+        day_endurance = endurance_by_date.get(d, [])
+        days.append(WeeklyDayEntry(
+            date=d.isoformat(),
+            climbing_count=len(day_ascents),
+            ascents=[
+                WeeklyAscentItem(
+                    route_name=a.route_name,
+                    grade=a.grade,
+                    tick_type=a.tick_type.value,
+                )
+                for a in day_ascents
+            ],
+            endurance_activities=[
+                WeeklyEnduranceItem(
+                    type=e.type,
+                    name=e.name,
+                    duration_s=e.duration_s,
+                )
+                for e in day_endurance
+            ],
+        ))
+
+    # Session streak: count of distinct climbing days this month
+    today = datetime.date.today()
+    month_start = datetime.date(today.year, today.month, 1)
+    streak_stmt = (
+        select(func.count(func.distinct(Ascent.date)))
+        .select_from(Ascent)
+        .where(Ascent.date >= month_start)
+    )
+    streak_result = await session.exec(streak_stmt)
+    session_streak = streak_result.one()
+
+    return WeeklyResponse(
+        week_start=monday.isoformat(),
+        days=days,
+        session_streak=session_streak,
+    )

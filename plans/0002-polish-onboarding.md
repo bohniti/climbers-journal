@@ -271,19 +271,19 @@ These exact values are consumed by the `OnboardingTour` component in Issue #5. A
 Below the chart, expandable day rows listing activities for that day with type badge, title, duration.
 
 ### Tasks
-- [ ] Alembic migration: add `ix_ascent_date` index on `ascent.date` (prerequisite for weekly endpoint; `EnduranceActivity` already has `ix_endurance_activity_date`)
-- [ ] Add `recharts` to frontend dependencies (`pnpm add recharts`)
-- [ ] Create `WeeklyActivityChart` component with stacked bars by activity type
-- [ ] Create `WeekNavigator` component (prev/next week, date range display)
-- [ ] Create `DayAccordion` component (expandable day rows with activity details)
-- [ ] Add `GET /stats/weekly` endpoint in `stats.py` — returns 7-day activity summary:
+- [x] Alembic migration: add `ix_ascent_date` index on `ascent.date` (prerequisite for weekly endpoint; `EnduranceActivity` already has `ix_endurance_activity_date`)
+- [x] Add `recharts` to frontend dependencies (`pnpm add recharts`)
+- [x] Create `WeeklyActivityChart` component with stacked bars by activity type
+- [x] Create `WeekNavigator` component (prev/next week, date range display)
+- [x] Create `DayAccordion` component (expandable day rows with activity details)
+- [x] Add `GET /stats/weekly` endpoint in `stats.py` — returns 7-day activity summary:
   - Input: `week_start` (ISO date, defaults to current week's Monday)
   - Output: `{ days: [{ date, climbing_count, endurance_activities: [{type, name, duration_s}], ascents: [{route_name, grade, tick_type}] }] }`
   - Queries both `ascent` and `endurance_activity` tables filtered by date range
-- [ ] Add session streak widget to dashboard: "You've logged N sessions this month" (COUNT ascents WHERE date >= month_start). Include in `/stats/weekly` response or existing `/stats/dashboard`.
-- [ ] Integrate chart + accordion + streak widget into dashboard page (`/`) above existing grade pyramid
-- [ ] Style chart with slate/emerald theme tokens
-- [ ] Tests (5 total): `/stats/weekly` with empty week, with mixed climbing+endurance data, with climbing-only day (no endurance), config/status with both missing, session streak count correctness
+- [x] Add session streak widget to dashboard: "You've logged N sessions this month" (COUNT ascents WHERE date >= month_start). Include in `/stats/weekly` response or existing `/stats/dashboard`.
+- [x] Integrate chart + accordion + streak widget into dashboard page (`/`) above existing grade pyramid
+- [x] Style chart with slate/emerald theme tokens
+- [x] Tests (4 total): `/stats/weekly` with empty week, with mixed climbing+endurance data, with climbing-only day (no endurance), session streak count correctness
 
 ---
 

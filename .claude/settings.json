@@ -12,11 +12,28 @@
       "Bash(git tag:*)",
       "Bash(git log:*)",
       "Bash(git ls-files:*)",
+      "Bash(git diff:*)",
+      "Bash(git status:*)",
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)",
+      "Bash(git stash:*)",
       "Bash(lsof:*)",
       "Bash(kill:*)",
       "Bash(npx shadcn@latest add:*)",
       "Bash(ls:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(cd:*)",
+      "Bash(pnpm:*)",
+      "Bash(gh:*)",
+      "Bash(curl:*)",
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "Skill",
+      "Agent"
     ]
   }
 }

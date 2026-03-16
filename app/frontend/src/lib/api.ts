@@ -368,6 +368,44 @@ export async function fetchCalendar(month: string): Promise<CalendarData> {
   return res.json();
 }
 
+// ── Weekly Activity ──────────────────────────────────────────────────
+
+export interface WeeklyAscentItem {
+  route_name: string | null;
+  grade: string | null;
+  tick_type: string;
+}
+
+export interface WeeklyEnduranceItem {
+  type: string;
+  name: string | null;
+  duration_s: number;
+}
+
+export interface WeeklyDayEntry {
+  date: string;
+  climbing_count: number;
+  ascents: WeeklyAscentItem[];
+  endurance_activities: WeeklyEnduranceItem[];
+}
+
+export interface WeeklyData {
+  week_start: string;
+  days: WeeklyDayEntry[];
+  session_streak: number;
+}
+
+export async function fetchWeekly(weekStart?: string): Promise<WeeklyData> {
+  const params = new URLSearchParams();
+  if (weekStart) params.set("week_start", weekStart);
+  const res = await fetch(`${API_BASE}/stats/weekly?${params}`);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to fetch weekly data (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
 // ── Activities (Endurance) ────────────────────────────────────────────
 
 export interface ActivityResponse {
