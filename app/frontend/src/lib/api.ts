@@ -34,6 +34,83 @@ export interface DraftCard {
   ascents: DraftAscent[];
 }
 
+// ── Config Status ─────────────────────────────────────────────────
+
+export interface ConfigStatus {
+  intervals_configured: boolean;
+  llm_configured: boolean;
+}
+
+export async function fetchConfigStatus(): Promise<ConfigStatus> {
+  const res = await fetch(`${API_BASE}/config/status`);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to fetch config status (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
+// ── Import ────────────────────────────────────────────────────────
+
+export interface ImportRowError {
+  row: number;
+  reason: string;
+}
+
+export interface ImportResponse {
+  created: number;
+  skipped: number;
+  rows_imported: number;
+  errors: ImportRowError[];
+}
+
+export async function importClimbingCsv(file: File): Promise<ImportResponse> {
+  const form = new FormData();
+  form.append("file", file);
+
+  const res = await fetch(`${API_BASE}/import/climbing-csv`, {
+    method: "POST",
+    body: form,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`CSV import failed (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
+// ── Sync ──────────────────────────────────────────────────────────
+
+export interface SyncFailure {
+  month: string;
+  error: string;
+}
+
+export interface SyncResponse {
+  synced: string[];
+  failed: SyncFailure[];
+  total_created: number;
+  total_updated: number;
+}
+
+export async function syncIntervals(
+  oldest: string,
+  newest: string
+): Promise<SyncResponse> {
+  const res = await fetch(`${API_BASE}/sync/intervals`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ oldest, newest }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Sync failed (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
 // ── Chat ───────────────────────────────────────────────────────────
 
 export interface ChatResponse {

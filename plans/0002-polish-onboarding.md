@@ -233,16 +233,19 @@ These exact values are consumed by the `OnboardingTour` component in Issue #5. A
 - Calls existing `POST /sync/intervals` (from PROJ-4)
 - Date range required
 
+### Prerequisites (done in PROJ-12)
+- [x] Add "Import Data" link to nav bar (`Nav.tsx` — route `/import`, `data-tour-step="import"`)
+- [x] `GET /config/status` endpoint exists (PROJ-11) — returns `{intervals_configured, llm_configured}`
+
 ### Tasks
-- [ ] Create `/import` page with two import cards:
+- [x] Create `/import` page (`app/frontend/src/app/import/page.tsx`) with two import cards:
   1. **Climbing History** — file upload (CSV), calls existing `POST /import/climbing-csv`
   2. **Endurance Activities** — date range picker + "Sync from intervals.icu" button, calls existing `POST /sync/intervals`
-- [ ] Use `GET /config/status` to check if intervals.icu is configured — gray out sync card with "Not configured" message if not
-- [ ] Disable buttons during upload/sync (prevent double-click)
-- [ ] Show import progress/results (rows imported, skipped, errors, activities synced)
-- [ ] Add "Import Data" link to nav bar (always accessible)
-- [ ] After successful import, show results inline (no redirect)
-- [ ] Backend: no new endpoints needed — existing endpoints handle both imports
+- [x] On mount, call `GET /config/status` — if `intervals_configured: false`, gray out the sync card with "intervals.icu not configured" message
+- [x] Disable buttons during upload/sync (prevent double-click), show spinner
+- [x] Show import results inline: rows imported, skipped, errors (climbing); activities synced (endurance)
+- [x] Style with slate/emerald theme (consistent with PROJ-12 design tokens)
+- [x] Backend: no new endpoints needed — existing endpoints handle both imports
 
 ---
 

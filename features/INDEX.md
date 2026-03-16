@@ -16,5 +16,5 @@
 | PROJ-11 | App config file (YAML) + Gemini switch | done | [0002](../plans/0002-polish-onboarding.md) |
 | PROJ-12 | Frontend design refresh (dark slate + emerald) | in-progress | [0002](../plans/0002-polish-onboarding.md) |
 | PROJ-13 | Weekly activity chart on dashboard | planned | [0002](../plans/0002-polish-onboarding.md) |
-| PROJ-14 | Data import onboarding UI | planned | [0002](../plans/0002-polish-onboarding.md) |
+| PROJ-14 | Data import onboarding UI | done | [0002](../plans/0002-polish-onboarding.md) |
 | PROJ-15 | User onboarding tutorial | planned | [0002](../plans/0002-polish-onboarding.md) |
