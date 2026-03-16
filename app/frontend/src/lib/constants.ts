@@ -20,28 +20,125 @@ export const PYRAMID_COLORS: Record<string, string> = {
   repeat: "bg-green-400",
 };
 
-// ── Activity icons (emoji) ──────────────────────────────────────────
+// ── Strava-aligned sport type taxonomy ──────────────────────────────
 
-export const ACTIVITY_ICONS: Record<string, string> = {
-  Run: "\u{1F3C3}",
-  Ride: "\u{1F6B4}",
-  Hike: "\u{1F6B6}",
-  TrailRun: "\u{26F0}",
-  Swim: "\u{1F3CA}",
-  Walk: "\u{1F6B6}",
-  VirtualRide: "\u{1F6B4}",
+export type SportCategory =
+  | "run"
+  | "ride"
+  | "swim"
+  | "winter"
+  | "climbing"
+  | "water"
+  | "fitness"
+  | "other";
+
+export interface SportTypeInfo {
+  icon: string;
+  label: string;
+  category: SportCategory;
+}
+
+export const SPORT_TYPES: Record<string, SportTypeInfo> = {
+  // Running
+  Run:              { icon: "🏃", label: "Run", category: "run" },
+  TrailRun:         { icon: "⛰️", label: "Trail Run", category: "run" },
+  VirtualRun:       { icon: "🏃", label: "Virtual Run", category: "run" },
+
+  // Cycling
+  Ride:             { icon: "🚴", label: "Ride", category: "ride" },
+  GravelRide:       { icon: "🚴", label: "Gravel Ride", category: "ride" },
+  MountainBikeRide: { icon: "🚵", label: "Mountain Bike", category: "ride" },
+  EBikeRide:        { icon: "🚴", label: "E-Bike Ride", category: "ride" },
+  EMountainBikeRide:{ icon: "🚵", label: "E-MTB Ride", category: "ride" },
+  VirtualRide:      { icon: "🚴", label: "Virtual Ride", category: "ride" },
+  Velomobile:       { icon: "🚴", label: "Velomobile", category: "ride" },
+  Handcycle:        { icon: "🚴", label: "Handcycle", category: "ride" },
+
+  // Swimming
+  Swim:             { icon: "🏊", label: "Swim", category: "swim" },
+
+  // Winter sports
+  AlpineSki:        { icon: "⛷️", label: "Alpine Ski", category: "winter" },
+  BackcountrySki:   { icon: "🎿", label: "Backcountry Ski", category: "winter" },
+  NordicSki:        { icon: "🎿", label: "Nordic Ski", category: "winter" },
+  Snowboard:        { icon: "🏂", label: "Snowboard", category: "winter" },
+  Snowshoe:         { icon: "🥾", label: "Snowshoe", category: "winter" },
+  IceSkate:         { icon: "⛸️", label: "Ice Skate", category: "winter" },
+
+  // Climbing
+  RockClimbing:     { icon: "🧗", label: "Rock Climbing", category: "climbing" },
+
+  // Water sports
+  Canoeing:         { icon: "🛶", label: "Canoeing", category: "water" },
+  Kayaking:         { icon: "🛶", label: "Kayaking", category: "water" },
+  Rowing:           { icon: "🚣", label: "Rowing", category: "water" },
+  VirtualRow:       { icon: "🚣", label: "Virtual Row", category: "water" },
+  StandUpPaddling:  { icon: "🏄", label: "SUP", category: "water" },
+  Surfing:          { icon: "🏄", label: "Surfing", category: "water" },
+  Kitesurf:         { icon: "🪁", label: "Kitesurf", category: "water" },
+  Windsurf:         { icon: "🏄", label: "Windsurf", category: "water" },
+  Sail:             { icon: "⛵", label: "Sailing", category: "water" },
+
+  // Fitness & hiking
+  Hike:             { icon: "🥾", label: "Hike", category: "fitness" },
+  Walk:             { icon: "🚶", label: "Walk", category: "fitness" },
+  Yoga:             { icon: "🧘", label: "Yoga", category: "fitness" },
+  Pilates:          { icon: "🧘", label: "Pilates", category: "fitness" },
+  WeightTraining:   { icon: "🏋️", label: "Weight Training", category: "fitness" },
+  Crossfit:         { icon: "🏋️", label: "CrossFit", category: "fitness" },
+  HighIntensityIntervalTraining: { icon: "🔥", label: "HIIT", category: "fitness" },
+  Elliptical:       { icon: "🏋️", label: "Elliptical", category: "fitness" },
+  StairStepper:     { icon: "🏋️", label: "Stair Stepper", category: "fitness" },
+  Workout:          { icon: "💪", label: "Workout", category: "fitness" },
+
+  // Racquet sports & other
+  Badminton:        { icon: "🏸", label: "Badminton", category: "other" },
+  Golf:             { icon: "⛳", label: "Golf", category: "other" },
+  InlineSkate:      { icon: "🛼", label: "Inline Skate", category: "other" },
+  Pickleball:       { icon: "🏓", label: "Pickleball", category: "other" },
+  Racquetball:      { icon: "🏸", label: "Racquetball", category: "other" },
+  RollerSki:        { icon: "🎿", label: "Roller Ski", category: "other" },
+  Skateboard:       { icon: "🛹", label: "Skateboard", category: "other" },
+  Soccer:           { icon: "⚽", label: "Soccer", category: "other" },
+  Squash:           { icon: "🏸", label: "Squash", category: "other" },
+  TableTennis:      { icon: "🏓", label: "Table Tennis", category: "other" },
+  Tennis:           { icon: "🎾", label: "Tennis", category: "other" },
+  Wheelchair:       { icon: "♿", label: "Wheelchair", category: "other" },
 };
 
-// ── Activity type chart colors (hex for Recharts) ───────────────────
+// ── Climbing sub-type icons ─────────────────────────────────────────
+
+export const CLIMBING_STYLE_ICONS: Record<string, string> = {
+  sport:      "🧗",
+  boulder:    "🪨",
+  multi_pitch:"⛰️",
+  trad:       "🏔️",
+  alpine:     "🏔️",
+};
+
+// ── Category chart colors (hex for Recharts + badge) ────────────────
+
+export const CATEGORY_COLORS: Record<SportCategory, { hex: string; badge: string; label: string }> = {
+  climbing: { hex: "#ef4444", badge: "bg-red-900/40 text-red-300", label: "Climbing" },
+  run:      { hex: "#3b82f6", badge: "bg-blue-900/40 text-blue-300", label: "Run" },
+  ride:     { hex: "#22c55e", badge: "bg-green-900/40 text-green-300", label: "Ride" },
+  swim:     { hex: "#06b6d4", badge: "bg-cyan-900/40 text-cyan-300", label: "Swim" },
+  winter:   { hex: "#8b5cf6", badge: "bg-violet-900/40 text-violet-300", label: "Winter" },
+  water:    { hex: "#0ea5e9", badge: "bg-sky-900/40 text-sky-300", label: "Water" },
+  fitness:  { hex: "#f97316", badge: "bg-orange-900/40 text-orange-300", label: "Fitness" },
+  other:    { hex: "#9ca3af", badge: "bg-slate-800 text-slate-400", label: "Other" },
+};
+
+// ── Legacy aliases (kept for backward compat during migration) ──────
 
 export const ACTIVITY_TYPE_COLORS: Record<string, { hex: string; badge: string }> = {
-  bouldering: { hex: "#9333ea", badge: "bg-purple-900/40 text-purple-300" },
+  bouldering:  { hex: "#9333ea", badge: "bg-purple-900/40 text-purple-300" },
   sport_climb: { hex: "#3b82f6", badge: "bg-blue-900/40 text-blue-300" },
   multi_pitch: { hex: "#f59e0b", badge: "bg-amber-900/40 text-amber-300" },
-  cycling: { hex: "#22c55e", badge: "bg-green-900/40 text-green-300" },
-  hiking: { hex: "#14b8a6", badge: "bg-teal-900/40 text-teal-300" },
-  fitness: { hex: "#f97316", badge: "bg-orange-900/40 text-orange-300" },
-  other: { hex: "#9ca3af", badge: "bg-slate-800 text-slate-400" },
+  cycling:     { hex: "#22c55e", badge: "bg-green-900/40 text-green-300" },
+  hiking:      { hex: "#14b8a6", badge: "bg-teal-900/40 text-teal-300" },
+  fitness:     { hex: "#f97316", badge: "bg-orange-900/40 text-orange-300" },
+  other:       { hex: "#9ca3af", badge: "bg-slate-800 text-slate-400" },
 };
 
 // ── Venue colors (dark-only) ────────────────────────────────────────
@@ -58,8 +155,24 @@ export function tickTypeLabel(tt: string): string {
   return tt.charAt(0).toUpperCase() + tt.slice(1);
 }
 
-export function activityIcon(type: string): string {
-  return ACTIVITY_ICONS[type] ?? "\u{1F4AA}";
+/** Get sport type info for a Strava/intervals.icu type string */
+export function getSportType(type: string): SportTypeInfo {
+  if (SPORT_TYPES[type]) return SPORT_TYPES[type];
+  // Unknown type — fallback to Workout with warning
+  if (typeof window !== "undefined") {
+    console.warn(`Unknown sport type: "${type}", falling back to Workout`);
+  }
+  return { icon: "💪", label: type, category: "fitness" };
+}
+
+/** Get the icon for a sport type */
+export function sportIcon(type: string): string {
+  return getSportType(type).icon;
+}
+
+/** Map a sport type string to its category */
+export function sportCategory(type: string): SportCategory {
+  return getSportType(type).category;
 }
 
 export function formatDuration(seconds: number): string {

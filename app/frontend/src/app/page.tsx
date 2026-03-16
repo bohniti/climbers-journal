@@ -11,10 +11,10 @@ import {
 import {
   TICK_COLORS,
   PYRAMID_COLORS,
-  ACTIVITY_ICONS,
   tickTypeLabel,
   formatDuration,
   formatDate,
+  sportIcon,
 } from "@/lib/constants";
 import WeeklyActivity from "@/components/WeeklyActivity";
 import OnboardingTour, { useOnboardingTour, resetOnboarding } from "@/components/OnboardingTour";
@@ -366,7 +366,7 @@ export default function DashboardPage() {
                       className="flex items-center gap-3 rounded-lg px-2 py-1.5"
                     >
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-blue-900/30 text-sm">
-                        {ACTIVITY_ICONS[item.data.type] ?? "\u{1F4AA}"}
+                        {sportIcon(item.data.type)}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">

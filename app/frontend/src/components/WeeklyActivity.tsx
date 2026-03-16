@@ -11,11 +11,13 @@ import {
 } from "recharts";
 import { fetchWeekly, type WeeklyData, type WeeklyDayEntry } from "@/lib/api";
 import {
-  ACTIVITY_TYPE_COLORS,
-  ACTIVITY_ICONS,
+  CATEGORY_COLORS,
   TICK_COLORS,
   tickTypeLabel,
   formatDuration,
+  sportIcon,
+  sportCategory,
+  type SportCategory,
 } from "@/lib/constants";
 
 // ── Week Navigator ──────────────────────────────────────────────────
@@ -121,7 +123,7 @@ function DayAccordion({ day }: { day: WeeklyDayEntry }) {
           {day.endurance_activities.map((e, i) => (
             <div key={`e-${i}`} className="flex items-center gap-2 text-xs">
               <span className="text-sm">
-                {ACTIVITY_ICONS[e.type] ?? "💪"}
+                {sportIcon(e.type)}
               </span>
               <span className="text-slate-200">{e.name ?? e.type}</span>
               <span className="text-slate-400">
@@ -148,7 +150,9 @@ function ChartTooltip({ active, payload, label }: any) {
             className="inline-block h-2 w-2 rounded-sm"
             style={{ backgroundColor: p.fill }}
           />
-          <span className="text-slate-300">{p.dataKey}:</span>
+          <span className="text-slate-300">
+            {CATEGORY_COLORS[p.dataKey as SportCategory]?.label ?? p.dataKey}:
+          </span>
           <span className="text-slate-100">{p.value}</span>
         </div>
       ))}
@@ -170,6 +174,10 @@ function toISO(d: Date): string {
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
+
+const CHART_CATEGORIES: SportCategory[] = [
+  "climbing", "run", "ride", "swim", "winter", "water", "fitness", "other",
+];
 
 export default function WeeklyActivity() {
   const [weekStart, setWeekStart] = useState(() => toISO(getMonday(new Date())));
@@ -198,44 +206,34 @@ export default function WeeklyActivity() {
     setWeekStart(toISO(d));
   };
 
-  // Build chart data — count activities by type per day
+  // Build chart data — count activities by category per day
   const chartData = data?.days.map((day) => {
     const d = new Date(day.date + "T00:00:00");
     const dayLabel = d.toLocaleDateString(undefined, { weekday: "short" });
 
     const counts: Record<string, number> = {};
 
-    // Count climbing ascents as "climbing"
+    // Count climbing ascents
     if (day.climbing_count > 0) {
       counts["climbing"] = day.climbing_count;
     }
 
-    // Count endurance by type
+    // Count endurance by sport category
     for (const e of day.endurance_activities) {
-      const type = e.type.toLowerCase();
-      // Map intervals.icu types to our categories
-      const category = mapEnduranceType(type);
+      const category = sportCategory(e.type);
       counts[category] = (counts[category] || 0) + 1;
     }
 
     return { name: dayLabel, ...counts };
   }) ?? [];
 
-  // Determine which activity types are present in this week
-  const activeTypes = new Set<string>();
+  // Determine which categories are present this week
+  const activeCategories = new Set<string>();
   for (const d of chartData) {
     for (const key of Object.keys(d)) {
-      if (key !== "name" && (d as any)[key] > 0) activeTypes.add(key);
+      if (key !== "name" && (d as any)[key] > 0) activeCategories.add(key);
     }
   }
-
-  const allTypes = [
-    { key: "climbing", hex: "#ef4444", label: "Climbing" },
-    { key: "cycling", hex: ACTIVITY_TYPE_COLORS.cycling.hex, label: "Cycling" },
-    { key: "hiking", hex: ACTIVITY_TYPE_COLORS.hiking.hex, label: "Hiking" },
-    { key: "fitness", hex: ACTIVITY_TYPE_COLORS.fitness.hex, label: "Fitness" },
-    { key: "other", hex: ACTIVITY_TYPE_COLORS.other.hex, label: "Other" },
-  ];
 
   return (
     <div className="mb-6 rounded-xl border border-slate-700 bg-slate-900 p-4">
@@ -266,15 +264,15 @@ export default function WeeklyActivity() {
         <>
           {/* Legend */}
           <div className="mb-2 flex flex-wrap gap-3 text-[10px]">
-            {allTypes
-              .filter((t) => activeTypes.has(t.key))
-              .map((t) => (
-                <div key={t.key} className="flex items-center gap-1">
+            {CHART_CATEGORIES
+              .filter((cat) => activeCategories.has(cat))
+              .map((cat) => (
+                <div key={cat} className="flex items-center gap-1">
                   <span
                     className="inline-block h-2.5 w-2.5 rounded-sm"
-                    style={{ backgroundColor: t.hex }}
+                    style={{ backgroundColor: CATEGORY_COLORS[cat].hex }}
                   />
-                  <span className="text-slate-400">{t.label}</span>
+                  <span className="text-slate-400">{CATEGORY_COLORS[cat].label}</span>
                 </div>
               ))}
           </div>
@@ -295,12 +293,12 @@ export default function WeeklyActivity() {
                 allowDecimals={false}
               />
               <Tooltip content={<ChartTooltip />} cursor={false} />
-              {allTypes.map((t) => (
+              {CHART_CATEGORIES.map((cat) => (
                 <Bar
-                  key={t.key}
-                  dataKey={t.key}
+                  key={cat}
+                  dataKey={cat}
                   stackId="a"
-                  fill={t.hex}
+                  fill={CATEGORY_COLORS[cat].hex}
                   radius={[0, 0, 0, 0]}
                 />
               ))}
@@ -319,16 +317,4 @@ export default function WeeklyActivity() {
       )}
     </div>
   );
-}
-
-// ── Helpers ──────────────────────────────────────────────────────────
-
-function mapEnduranceType(type: string): string {
-  const t = type.toLowerCase();
-  if (t.includes("ride") || t.includes("cycling")) return "cycling";
-  if (t.includes("hike") || t.includes("walk")) return "hiking";
-  if (t.includes("run") || t.includes("trail")) return "fitness";
-  if (t.includes("swim") || t.includes("yoga") || t.includes("strength"))
-    return "fitness";
-  return "other";
 }

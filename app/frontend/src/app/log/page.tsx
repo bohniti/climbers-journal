@@ -10,11 +10,11 @@ import {
 } from "@/lib/api";
 import {
   TICK_COLORS,
-  ACTIVITY_ICONS,
   tickTypeLabel,
   formatDuration,
   formatDate,
   formatDistance,
+  sportIcon,
 } from "@/lib/constants";
 
 // ── Unified activity item ─────────────────────────────────────────────
@@ -394,7 +394,7 @@ function EnduranceCard({ activity }: { activity: ActivityResponse }) {
     >
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-900/30 text-lg">
-          {ACTIVITY_ICONS[activity.type] ?? "\u{1F4AA}"}
+          {sportIcon(activity.type)}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">

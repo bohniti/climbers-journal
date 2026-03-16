@@ -7,7 +7,7 @@ import {
   type CalendarData,
   type CalendarDayEntry,
 } from "@/lib/api";
-import { ACTIVITY_ICONS, VENUE_COLORS, formatDuration } from "@/lib/constants";
+import { VENUE_COLORS, formatDuration, sportIcon } from "@/lib/constants";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -207,7 +207,7 @@ export default function CalendarPage() {
             <div className="flex items-center gap-0.5">
               {entry.endurance.activities.slice(0, 3).map((a, i) => (
                 <span key={i} className="text-[10px]">
-                  {ACTIVITY_ICONS[a.type] ?? "\u{1F4AA}"}
+                  {sportIcon(a.type)}
                 </span>
               ))}
               {entry.endurance.activities.length > 3 && (
@@ -221,7 +221,7 @@ export default function CalendarPage() {
               {entry.endurance.activities.map((a, i) => (
                 <div key={i} className="flex items-center gap-1">
                   <span className="text-[10px]">
-                    {ACTIVITY_ICONS[a.type] ?? "\u{1F4AA}"}
+                    {sportIcon(a.type)}
                   </span>
                   <span className="text-[10px] text-slate-400">
                     {formatDuration(a.duration_s)}
@@ -318,7 +318,7 @@ export default function CalendarPage() {
                 <div className="mt-2 space-y-1">
                   {entry.endurance.activities.map((a, i) => (
                     <div key={i} className="flex items-center gap-2">
-                      <span>{ACTIVITY_ICONS[a.type] ?? "\u{1F4AA}"}</span>
+                      <span>{sportIcon(a.type)}</span>
                       <span className="text-sm text-slate-300">
                         {a.type}
                       </span>
