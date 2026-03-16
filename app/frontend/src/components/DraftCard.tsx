@@ -16,6 +16,9 @@ const TICK_TYPES = [
 
 const STYLES = ["sport", "trad", "boulder", "multi_pitch", "alpine"] as const;
 
+const inputClass =
+  "rounded border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-100 outline-none focus:ring-2 focus:ring-emerald-600";
+
 interface DraftCardProps {
   draft: DraftCard;
   onConfirmed: (message: string) => void;
@@ -91,17 +94,17 @@ export default function DraftCardView({
   }, [ascents, cragName, sessionDate, draft.crag, onConfirmed]);
 
   return (
-    <div className="rounded-xl border border-zinc-300 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+    <div className="rounded-xl border border-slate-700 bg-slate-900 p-4">
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+        <h3 className="text-sm font-semibold text-slate-100">
           Draft: Climbing Session
         </h3>
         <span
           className={`rounded-full px-2 py-0.5 text-xs font-medium ${
             draft.crag.status === "existing"
-              ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-              : "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+              ? "bg-green-900/40 text-green-300"
+              : "bg-blue-900/40 text-blue-300"
           }`}
         >
           {draft.crag.status === "existing" ? "Known crag" : "New crag"}
@@ -111,38 +114,38 @@ export default function DraftCardView({
       {/* Crag + Date */}
       <div className="mb-3 grid grid-cols-2 gap-2">
         <div>
-          <label className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
+          <label className="mb-1 block text-xs text-slate-400">
             Crag
           </label>
           <input
             type="text"
             value={cragName}
             onChange={(e) => setCragName(e.target.value)}
-            className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+            className={`w-full ${inputClass}`}
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
+          <label className="mb-1 block text-xs text-slate-400">
             Date
           </label>
           <input
             type="date"
             value={sessionDate}
             onChange={(e) => setSessionDate(e.target.value)}
-            className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+            className={`w-full ${inputClass}`}
           />
         </div>
       </div>
 
       {/* Ascents */}
       <div className="mb-3 space-y-2">
-        <label className="block text-xs text-zinc-500 dark:text-zinc-400">
+        <label className="block text-xs text-slate-400">
           Ascents
         </label>
         {ascents.map((a, i) => (
           <div
             key={i}
-            className="rounded-lg border border-zinc-200 bg-zinc-50 p-2.5 dark:border-zinc-700 dark:bg-zinc-800"
+            className="rounded-lg border border-slate-700 bg-slate-800 p-2.5"
           >
             <div className="mb-2 flex items-center gap-2">
               <input
@@ -152,14 +155,14 @@ export default function DraftCardView({
                 onChange={(e) =>
                   updateAscent(i, { route_name: e.target.value || undefined })
                 }
-                className="flex-1 rounded border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+                className={`flex-1 ${inputClass}`}
               />
               {a.route_status && (
                 <span
                   className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
                     a.route_status === "existing"
-                      ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-                      : "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                      ? "bg-green-900/40 text-green-300"
+                      : "bg-blue-900/40 text-blue-300"
                   }`}
                 >
                   {a.route_status}
@@ -168,7 +171,7 @@ export default function DraftCardView({
               <button
                 type="button"
                 onClick={() => removeAscent(i)}
-                className="shrink-0 text-zinc-400 hover:text-red-500"
+                className="shrink-0 text-slate-400 hover:text-red-400"
                 title="Remove ascent"
               >
                 &times;
@@ -182,12 +185,12 @@ export default function DraftCardView({
                 onChange={(e) =>
                   updateAscent(i, { grade: e.target.value || undefined })
                 }
-                className="w-20 rounded border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+                className={`w-20 ${inputClass}`}
               />
               <select
                 value={a.tick_type}
                 onChange={(e) => updateAscent(i, { tick_type: e.target.value })}
-                className="rounded border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+                className={inputClass}
               >
                 {TICK_TYPES.map((t) => (
                   <option key={t} value={t}>
@@ -198,7 +201,7 @@ export default function DraftCardView({
               <select
                 value={a.style ?? "sport"}
                 onChange={(e) => updateAscent(i, { style: e.target.value })}
-                className="rounded border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+                className={inputClass}
               >
                 {STYLES.map((s) => (
                   <option key={s} value={s}>
@@ -216,7 +219,7 @@ export default function DraftCardView({
                     tries: e.target.value ? parseInt(e.target.value) : undefined,
                   })
                 }
-                className="w-16 rounded border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+                className={`w-16 ${inputClass}`}
               />
             </div>
           </div>
@@ -224,7 +227,7 @@ export default function DraftCardView({
         <button
           type="button"
           onClick={addAscent}
-          className="w-full rounded-lg border border-dashed border-zinc-300 py-1.5 text-xs text-zinc-500 hover:border-zinc-400 hover:text-zinc-700 dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-zinc-500"
+          className="w-full rounded-lg border border-dashed border-slate-700 py-1.5 text-xs text-slate-400 hover:border-slate-600"
         >
           + Add ascent
         </button>
@@ -232,7 +235,7 @@ export default function DraftCardView({
 
       {/* Error */}
       {error && (
-        <p className="mb-2 text-xs text-red-500">{error}</p>
+        <p className="mb-2 text-xs text-red-400">{error}</p>
       )}
 
       {/* Actions */}
@@ -241,7 +244,7 @@ export default function DraftCardView({
           type="button"
           onClick={onCancelled}
           disabled={saving}
-          className="rounded-lg px-3 py-1.5 text-sm text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+          className="rounded-lg px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800"
         >
           Cancel
         </button>
@@ -249,7 +252,7 @@ export default function DraftCardView({
           type="button"
           onClick={handleConfirm}
           disabled={saving || ascents.length === 0}
-          className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+          className="rounded-lg bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-40"
         >
           {saving ? "Saving..." : "Confirm"}
         </button>

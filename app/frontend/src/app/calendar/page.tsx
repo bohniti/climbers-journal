@@ -7,31 +7,9 @@ import {
   type CalendarData,
   type CalendarDayEntry,
 } from "@/lib/api";
+import { ACTIVITY_ICONS, VENUE_COLORS, formatDuration } from "@/lib/constants";
 
 // ── Helpers ──────────────────────────────────────────────────────────
-
-const ACTIVITY_ICONS: Record<string, string> = {
-  Run: "\u{1F3C3}",
-  Ride: "\u{1F6B4}",
-  Hike: "\u{1F6B6}",
-  TrailRun: "\u{26F0}",
-  Swim: "\u{1F3CA}",
-  Walk: "\u{1F6B6}",
-  VirtualRide: "\u{1F6B4}",
-};
-
-const VENUE_COLORS: Record<string, string> = {
-  outdoor_crag: "text-red-600 dark:text-red-400",
-  indoor_gym: "text-violet-600 dark:text-violet-400",
-  mixed: "text-orange-600 dark:text-orange-400",
-};
-
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  if (h > 0) return `${h}h${m > 0 ? ` ${m}m` : ""}`;
-  return `${m}m`;
-}
 
 function monthStr(year: number, month: number): string {
   return `${year}-${String(month).padStart(2, "0")}`;
@@ -45,9 +23,8 @@ function monthLabel(year: number, month: number): string {
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 function getMonthGrid(year: number, month: number): (number | null)[][] {
-  // ISO weekday: Mon=0 ... Sun=6
   const firstDay = new Date(year, month - 1, 1);
-  const startDow = (firstDay.getDay() + 6) % 7; // convert Sun=0 to Mon=0
+  const startDow = (firstDay.getDay() + 6) % 7;
   const daysInMonth = new Date(year, month, 0).getDate();
 
   const weeks: (number | null)[][] = [];
@@ -96,7 +73,6 @@ export default function CalendarPage() {
 
   const grid = getMonthGrid(year, month);
 
-  // Set initial week to current week
   useEffect(() => {
     const today = now.getDate();
     const idx = grid.findIndex((w) => w.includes(today));
@@ -189,8 +165,8 @@ export default function CalendarPage() {
         href={`/log?date_from=${ds}&date_to=${ds}`}
         className={`group relative flex min-h-[4.5rem] flex-col rounded-lg border p-1.5 transition-colors ${
           hasActivity
-            ? "border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600"
-            : "border-zinc-100 bg-zinc-50/50 hover:border-zinc-200 dark:border-zinc-800/50 dark:bg-zinc-950/30 dark:hover:border-zinc-700"
+            ? "border-slate-700 bg-slate-900 hover:border-slate-600"
+            : "border-slate-800/50 bg-slate-950/30 hover:border-slate-700"
         }`}
       >
         {/* Day number */}
@@ -198,10 +174,10 @@ export default function CalendarPage() {
           <span
             className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-medium ${
               today
-                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                ? "bg-emerald-700 text-white"
                 : hasActivity
-                  ? "text-zinc-900 dark:text-zinc-100"
-                  : "text-zinc-400 dark:text-zinc-600"
+                  ? "text-slate-100"
+                  : "text-slate-500"
             }`}
           >
             {day}
@@ -213,7 +189,7 @@ export default function CalendarPage() {
           <div className="flex items-center gap-1">
             <span className="text-[10px]">{"\u{1F9D7}"}</span>
             <span
-              className={`text-[10px] font-medium ${VENUE_COLORS[entry.climbing.venue_type] ?? "text-zinc-600 dark:text-zinc-400"}`}
+              className={`text-[10px] font-medium ${VENUE_COLORS[entry.climbing.venue_type] ?? "text-slate-400"}`}
             >
               {entry.climbing.route_count}
               {!compact && entry.climbing.hardest_grade && (
@@ -235,7 +211,7 @@ export default function CalendarPage() {
                 </span>
               ))}
               {entry.endurance.activities.length > 3 && (
-                <span className="text-[9px] text-zinc-400">
+                <span className="text-[9px] text-slate-500">
                   +{entry.endurance.activities.length - 3}
                 </span>
               )}
@@ -247,7 +223,7 @@ export default function CalendarPage() {
                   <span className="text-[10px]">
                     {ACTIVITY_ICONS[a.type] ?? "\u{1F4AA}"}
                   </span>
-                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                  <span className="text-[10px] text-slate-400">
                     {formatDuration(a.duration_s)}
                   </span>
                 </div>
@@ -257,7 +233,7 @@ export default function CalendarPage() {
 
         {/* Rest day indicator */}
         {!hasActivity && (
-          <div className="mt-auto text-[9px] text-zinc-300 dark:text-zinc-700">
+          <div className="mt-auto text-[9px] text-slate-700">
             rest
           </div>
         )}
@@ -287,29 +263,29 @@ export default function CalendarPage() {
             <Link
               key={day}
               href={`/log?date_from=${ds}&date_to=${ds}`}
-              className={`block rounded-xl border p-3 transition-colors hover:border-zinc-300 dark:hover:border-zinc-600 ${
+              className={`block rounded-xl border p-3 transition-colors hover:border-slate-600 ${
                 entry
-                  ? "border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900"
-                  : "border-zinc-100 bg-zinc-50/50 dark:border-zinc-800/50 dark:bg-zinc-950/30"
+                  ? "border-slate-700 bg-slate-900"
+                  : "border-slate-800/50 bg-slate-950/30"
               }`}
             >
               <div className="flex items-center gap-2">
                 <span
                   className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
                     today
-                      ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                      : "text-zinc-700 dark:text-zinc-300"
+                      ? "bg-emerald-700 text-white"
+                      : "text-slate-300"
                   }`}
                 >
                   {day}
                 </span>
-                <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                <span className="text-sm text-slate-400">
                   {label}
                 </span>
               </div>
 
               {!entry && (
-                <div className="mt-1.5 text-xs text-zinc-400 dark:text-zinc-600">
+                <div className="mt-1.5 text-xs text-slate-500">
                   Rest day
                 </div>
               )}
@@ -324,11 +300,11 @@ export default function CalendarPage() {
                     {entry.climbing.route_count !== 1 ? "s" : ""}
                   </span>
                   {entry.climbing.hardest_grade && (
-                    <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                    <span className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-xs text-slate-300">
                       hardest: {entry.climbing.hardest_grade}
                     </span>
                   )}
-                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                  <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-400">
                     {entry.climbing.venue_type === "indoor_gym"
                       ? "gym"
                       : entry.climbing.venue_type === "mixed"
@@ -343,10 +319,10 @@ export default function CalendarPage() {
                   {entry.endurance.activities.map((a, i) => (
                     <div key={i} className="flex items-center gap-2">
                       <span>{ACTIVITY_ICONS[a.type] ?? "\u{1F4AA}"}</span>
-                      <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                      <span className="text-sm text-slate-300">
                         {a.type}
                       </span>
-                      <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                      <span className="text-sm text-slate-400">
                         {formatDuration(a.duration_s)}
                       </span>
                     </div>
@@ -370,36 +346,36 @@ export default function CalendarPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={prevMonth}
-              className="rounded-md border border-zinc-300 px-2 py-1 text-sm hover:bg-zinc-100 dark:border-zinc-600 dark:hover:bg-zinc-800"
+              className="rounded-md border border-slate-700 px-2 py-1 text-sm hover:bg-slate-800"
             >
               &larr;
             </button>
-            <h2 className="min-w-[10rem] text-center text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+            <h2 className="min-w-[10rem] text-center text-lg font-semibold text-slate-100">
               {monthLabel(year, month)}
             </h2>
             <button
               onClick={nextMonth}
-              className="rounded-md border border-zinc-300 px-2 py-1 text-sm hover:bg-zinc-100 dark:border-zinc-600 dark:hover:bg-zinc-800"
+              className="rounded-md border border-slate-700 px-2 py-1 text-sm hover:bg-slate-800"
             >
               &rarr;
             </button>
             <button
               onClick={goToday}
-              className="rounded-md border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-800"
+              className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-400 hover:bg-slate-800"
             >
               Today
             </button>
           </div>
 
-          <div className="flex gap-1 rounded-lg border border-zinc-200 p-0.5 dark:border-zinc-700">
+          <div className="flex gap-1 rounded-lg border border-slate-700 p-0.5">
             {(["month", "week"] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
                 className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
                   view === v
-                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                    : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                    ? "bg-emerald-700 text-white"
+                    : "text-slate-400 hover:text-slate-200"
                 }`}
               >
                 {v.charAt(0).toUpperCase() + v.slice(1)}
@@ -409,13 +385,13 @@ export default function CalendarPage() {
         </div>
 
         {loading && (
-          <div className="flex h-64 items-center justify-center text-sm text-zinc-400">
+          <div className="flex h-64 items-center justify-center text-sm text-slate-400">
             Loading...
           </div>
         )}
 
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+          <div className="rounded-lg border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">
             {error}
           </div>
         )}
@@ -427,7 +403,7 @@ export default function CalendarPage() {
               {WEEKDAYS.map((wd) => (
                 <div
                   key={wd}
-                  className="text-center text-[10px] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500"
+                  className="text-center text-[10px] font-medium uppercase tracking-wider text-slate-500"
                 >
                   {wd}
                 </div>
@@ -435,14 +411,12 @@ export default function CalendarPage() {
             </div>
 
             {view === "month" ? (
-              /* Month view: full grid */
               <div className="grid grid-cols-7 gap-1">
                 {grid.flat().map((day, i) => (
                   <div key={i}>{renderDayCell(day, true)}</div>
                 ))}
               </div>
             ) : (
-              /* Week view: highlighted week + detail */
               <>
                 {/* Week selector strip */}
                 <div className="mb-2 flex gap-1">
@@ -452,8 +426,8 @@ export default function CalendarPage() {
                       onClick={() => setWeekIndex(i)}
                       className={`flex-1 rounded-md py-1 text-[10px] font-medium transition-colors ${
                         weekIndex === i
-                          ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                          : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                          ? "bg-emerald-700 text-white"
+                          : "bg-slate-800 text-slate-400 hover:bg-slate-700"
                       }`}
                     >
                       W{i + 1}

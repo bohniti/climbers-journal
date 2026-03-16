@@ -38,6 +38,11 @@ const GRADE_SYSTEMS = [
 
 const STORAGE_KEY = "climbers-journal-add-draft";
 
+// ── Shared input class ──────────────────────────────────────────────
+
+const inputClass =
+  "w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-emerald-600 outline-none";
+
 // ── Types ────────────────────────────────────────────────────────────
 
 interface AscentDraft {
@@ -101,12 +106,10 @@ export default function AddSessionPage() {
 
   const isGym = form.venue_type === "indoor_gym";
 
-  // Load crags for autocomplete
   useEffect(() => {
     listCrags({ limit: 200 }).then(setCrags).catch(() => {});
   }, []);
 
-  // Load draft from localStorage on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -122,14 +125,12 @@ export default function AddSessionPage() {
     }
   }, []);
 
-  // Auto-save draft to localStorage
   useEffect(() => {
     if (!result) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
     }
   }, [form, result]);
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (
@@ -145,7 +146,6 @@ export default function AddSessionPage() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  // Filtered crags for dropdown
   const filteredCrags = useMemo(() => {
     if (!cragSearch.trim()) return crags;
     const q = cragSearch.toLowerCase();
@@ -203,7 +203,6 @@ export default function AddSessionPage() {
       setError("Add at least one ascent");
       return;
     }
-    // For outdoor crags, route name is required
     if (!isGym) {
       const missing = form.ascents.findIndex((a) => !a.route_name.trim());
       if (missing >= 0) {
@@ -255,12 +254,12 @@ export default function AddSessionPage() {
   if (result) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="mx-4 max-w-md rounded-xl border border-zinc-200 bg-white p-6 text-center dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="mx-4 max-w-md rounded-xl border border-slate-700 bg-slate-900 p-6 text-center">
           <div className="mb-3 text-3xl">&#x2705;</div>
-          <h2 className="mb-1 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+          <h2 className="mb-1 text-lg font-semibold text-slate-100">
             Session saved
           </h2>
-          <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mb-4 text-sm text-slate-400">
             {result.ascents_created} ascent(s) at {result.crag_name}
             {result.crag_created && " (new crag)"}
             {result.ascents_skipped > 0 &&
@@ -269,13 +268,13 @@ export default function AddSessionPage() {
           <div className="flex justify-center gap-3">
             <button
               onClick={handleNewSession}
-              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-100 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
             >
               Log another
             </button>
             <Link
               href="/log"
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+              className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600"
             >
               View log
             </Link>
@@ -291,26 +290,26 @@ export default function AddSessionPage() {
     <div className="flex-1 overflow-y-auto">
       <div className="mx-auto max-w-2xl px-4 py-6">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+          <h1 className="text-lg font-semibold text-slate-100">
             Log climbing session
           </h1>
           <Link
             href="/log"
-            className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+            className="text-sm text-slate-400 hover:text-slate-200"
           >
             Cancel
           </Link>
         </div>
 
         {/* ── Crag section ─────────────────────────────────────── */}
-        <section className="mb-6 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-          <h2 className="mb-3 text-sm font-medium text-zinc-900 dark:text-zinc-100">
+        <section className="mb-6 rounded-xl border border-slate-700 bg-slate-900 p-4">
+          <h2 className="mb-3 text-sm font-medium text-slate-100">
             Crag
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {/* Crag name with autocomplete */}
             <div className="relative sm:col-span-2">
-              <label className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
+              <label className="mb-1 block text-xs text-slate-400">
                 Name
               </label>
               <input
@@ -327,29 +326,29 @@ export default function AddSessionPage() {
                 }}
                 onFocus={() => setShowCragDropdown(true)}
                 placeholder="Search or enter crag name"
-                className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                className={inputClass}
               />
               {showCragDropdown && filteredCrags.length > 0 && (
                 <div
                   ref={dropdownRef}
-                  className="absolute left-0 right-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+                  className="absolute left-0 right-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg border border-slate-700 bg-slate-900 shadow-lg"
                 >
                   {filteredCrags.slice(0, 20).map((c) => (
                     <button
                       key={c.id}
                       type="button"
                       onClick={() => selectCrag(c)}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-800"
                     >
-                      <span className="text-zinc-900 dark:text-zinc-100">
+                      <span className="text-slate-100">
                         {c.name}
                       </span>
                       {c.country && (
-                        <span className="text-xs text-zinc-400">
+                        <span className="text-xs text-slate-400">
                           {c.country}
                         </span>
                       )}
-                      <span className="ml-auto rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                      <span className="ml-auto rounded-full bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">
                         {c.venue_type === "indoor_gym" ? "gym" : "outdoor"}
                       </span>
                     </button>
@@ -360,7 +359,7 @@ export default function AddSessionPage() {
 
             {/* Venue type */}
             <div>
-              <label className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
+              <label className="mb-1 block text-xs text-slate-400">
                 Venue type
               </label>
               <select
@@ -371,7 +370,7 @@ export default function AddSessionPage() {
                     venue_type: e.target.value,
                   }))
                 }
-                className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                className={inputClass}
               >
                 {VENUE_TYPES.map((v) => (
                   <option key={v.value} value={v.value}>
@@ -383,7 +382,7 @@ export default function AddSessionPage() {
 
             {/* Grade system */}
             <div>
-              <label className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
+              <label className="mb-1 block text-xs text-slate-400">
                 Grade system
               </label>
               <select
@@ -394,7 +393,7 @@ export default function AddSessionPage() {
                     grade_system: e.target.value,
                   }))
                 }
-                className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                className={inputClass}
               >
                 {GRADE_SYSTEMS.map((g) => (
                   <option key={g.value} value={g.value}>
@@ -406,7 +405,7 @@ export default function AddSessionPage() {
 
             {/* Country */}
             <div>
-              <label className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
+              <label className="mb-1 block text-xs text-slate-400">
                 Country
               </label>
               <input
@@ -419,13 +418,13 @@ export default function AddSessionPage() {
                   }))
                 }
                 placeholder="e.g. Germany"
-                className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                className={inputClass}
               />
             </div>
 
             {/* Region */}
             <div>
-              <label className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
+              <label className="mb-1 block text-xs text-slate-400">
                 Region
               </label>
               <input
@@ -438,17 +437,17 @@ export default function AddSessionPage() {
                   }))
                 }
                 placeholder="e.g. Frankenjura"
-                className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                className={inputClass}
               />
             </div>
           </div>
         </section>
 
         {/* ── Date section ─────────────────────────────────────── */}
-        <section className="mb-6 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <section className="mb-6 rounded-xl border border-slate-700 bg-slate-900 p-4">
           <div className="flex items-center gap-4">
             <div>
-              <label className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
+              <label className="mb-1 block text-xs text-slate-400">
                 Date
               </label>
               <input
@@ -458,7 +457,7 @@ export default function AddSessionPage() {
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, date: e.target.value }))
                 }
-                className="rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                className={inputClass}
               />
             </div>
           </div>
@@ -467,13 +466,13 @@ export default function AddSessionPage() {
         {/* ── Ascents section ──────────────────────────────────── */}
         <section className="mb-6">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+            <h2 className="text-sm font-medium text-slate-100">
               Ascents ({form.ascents.length})
             </h2>
             <button
               type="button"
               onClick={addAscent}
-              className="rounded-lg border border-zinc-300 px-3 py-1 text-xs text-zinc-600 hover:bg-zinc-100 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-800"
+              className="rounded-lg border border-slate-700 px-3 py-1 text-xs text-slate-400 hover:bg-slate-800"
             >
               + Add ascent
             </button>
@@ -483,17 +482,17 @@ export default function AddSessionPage() {
             {form.ascents.map((a, i) => (
               <div
                 key={i}
-                className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+                className="rounded-xl border border-slate-700 bg-slate-900 p-4"
               >
                 <div className="mb-3 flex items-center justify-between">
-                  <span className="text-xs font-medium text-zinc-400">
+                  <span className="text-xs font-medium text-slate-500">
                     #{i + 1}
                   </span>
                   {form.ascents.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeAscent(i)}
-                      className="text-xs text-zinc-400 hover:text-red-500"
+                      className="text-xs text-slate-400 hover:text-red-400"
                     >
                       Remove
                     </button>
@@ -502,39 +501,22 @@ export default function AddSessionPage() {
 
                 {/* Row 1: Route + Grade */}
                 <div className="mb-2 grid grid-cols-[1fr_100px] gap-2">
-                  {!isGym ? (
-                    <div>
-                      <label className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
-                        Route
-                      </label>
-                      <input
-                        type="text"
-                        value={a.route_name}
-                        onChange={(e) =>
-                          updateAscent(i, { route_name: e.target.value })
-                        }
-                        placeholder="Route name"
-                        className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
-                      />
-                    </div>
-                  ) : (
-                    <div>
-                      <label className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
-                        Route (optional)
-                      </label>
-                      <input
-                        type="text"
-                        value={a.route_name}
-                        onChange={(e) =>
-                          updateAscent(i, { route_name: e.target.value })
-                        }
-                        placeholder="Optional"
-                        className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
-                      />
-                    </div>
-                  )}
                   <div>
-                    <label className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
+                    <label className="mb-1 block text-xs text-slate-400">
+                      {isGym ? "Route (optional)" : "Route"}
+                    </label>
+                    <input
+                      type="text"
+                      value={a.route_name}
+                      onChange={(e) =>
+                        updateAscent(i, { route_name: e.target.value })
+                      }
+                      placeholder={isGym ? "Optional" : "Route name"}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-400">
                       Grade
                     </label>
                     <input
@@ -544,7 +526,7 @@ export default function AddSessionPage() {
                         updateAscent(i, { grade: e.target.value })
                       }
                       placeholder="e.g. 8a"
-                      className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                      className={inputClass}
                     />
                   </div>
                 </div>
@@ -552,7 +534,7 @@ export default function AddSessionPage() {
                 {/* Row 2: Tick type + Style + Tries */}
                 <div className="mb-2 grid grid-cols-3 gap-2">
                   <div>
-                    <label className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
+                    <label className="mb-1 block text-xs text-slate-400">
                       Tick type
                     </label>
                     <select
@@ -560,7 +542,7 @@ export default function AddSessionPage() {
                       onChange={(e) =>
                         updateAscent(i, { tick_type: e.target.value })
                       }
-                      className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                      className={inputClass}
                     >
                       {TICK_TYPES.map((t) => (
                         <option key={t} value={t}>
@@ -570,7 +552,7 @@ export default function AddSessionPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
+                    <label className="mb-1 block text-xs text-slate-400">
                       Style
                     </label>
                     <select
@@ -578,7 +560,7 @@ export default function AddSessionPage() {
                       onChange={(e) =>
                         updateAscent(i, { style: e.target.value })
                       }
-                      className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                      className={inputClass}
                     >
                       {STYLES.map((s) => (
                         <option key={s} value={s}>
@@ -588,7 +570,7 @@ export default function AddSessionPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
+                    <label className="mb-1 block text-xs text-slate-400">
                       Tries
                     </label>
                     <input
@@ -599,7 +581,7 @@ export default function AddSessionPage() {
                         updateAscent(i, { tries: e.target.value })
                       }
                       placeholder="1"
-                      className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                      className={inputClass}
                     />
                   </div>
                 </div>
@@ -607,7 +589,7 @@ export default function AddSessionPage() {
                 {/* Row 3: Rating + Partner */}
                 <div className="mb-2 grid grid-cols-2 gap-2">
                   <div>
-                    <label className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
+                    <label className="mb-1 block text-xs text-slate-400">
                       Rating
                     </label>
                     <select
@@ -615,7 +597,7 @@ export default function AddSessionPage() {
                       onChange={(e) =>
                         updateAscent(i, { rating: e.target.value })
                       }
-                      className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                      className={inputClass}
                     >
                       <option value="">No rating</option>
                       <option value="1">1 star</option>
@@ -626,7 +608,7 @@ export default function AddSessionPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
+                    <label className="mb-1 block text-xs text-slate-400">
                       Partner
                     </label>
                     <input
@@ -636,14 +618,14 @@ export default function AddSessionPage() {
                         updateAscent(i, { partner: e.target.value })
                       }
                       placeholder="Optional"
-                      className="w-full rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                      className={inputClass}
                     />
                   </div>
                 </div>
 
                 {/* Row 4: Notes */}
                 <div>
-                  <label className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
+                  <label className="mb-1 block text-xs text-slate-400">
                     Notes
                   </label>
                   <textarea
@@ -653,7 +635,7 @@ export default function AddSessionPage() {
                     }
                     placeholder="Optional notes"
                     rows={2}
-                    className="w-full resize-none rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                    className="w-full resize-none rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-100 placeholder-slate-500 outline-none focus:ring-2 focus:ring-emerald-600"
                   />
                 </div>
               </div>
@@ -664,7 +646,7 @@ export default function AddSessionPage() {
           <button
             type="button"
             onClick={addAscent}
-            className="mt-3 w-full rounded-xl border border-dashed border-zinc-300 py-2.5 text-sm text-zinc-500 hover:border-zinc-400 hover:text-zinc-700 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-600"
+            className="mt-3 w-full rounded-xl border border-dashed border-slate-700 py-2.5 text-sm text-slate-400 hover:border-slate-600"
           >
             + Add another ascent
           </button>
@@ -672,7 +654,7 @@ export default function AddSessionPage() {
 
         {/* ── Error ────────────────────────────────────────────── */}
         {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+          <div className="mb-4 rounded-lg border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">
             {error}
           </div>
         )}
@@ -681,7 +663,7 @@ export default function AddSessionPage() {
         <div className="flex justify-end gap-3 pb-8">
           <Link
             href="/log"
-            className="rounded-lg px-4 py-2 text-sm text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            className="rounded-lg px-4 py-2 text-sm text-slate-400 hover:bg-slate-800"
           >
             Cancel
           </Link>
@@ -689,7 +671,7 @@ export default function AddSessionPage() {
             type="button"
             onClick={handleSubmit}
             disabled={saving}
-            className="rounded-lg bg-zinc-900 px-5 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+            className="rounded-lg bg-emerald-700 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-40"
           >
             {saving ? "Saving..." : "Save session"}
           </button>
