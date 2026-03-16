@@ -12,6 +12,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from climbers_journal.models.climbing import (
     Ascent,
+    ClimbingSession,
     Crag,
     Route,
     TickType,
@@ -19,6 +20,7 @@ from climbers_journal.models.climbing import (
     normalize_name,
 )
 from climbers_journal.models.endurance import EnduranceActivity
+from climbers_journal.services.climbing import list_climbing_sessions, _session_to_dict
 
 # Tick types that count as "sends"
 SEND_TICK_TYPES = {
@@ -152,6 +154,38 @@ definitions: list[dict[str, Any]] = [
                     "date_to": {
                         "type": "string",
                         "description": "End date in YYYY-MM-DD (defaults to today).",
+                    },
+                },
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_sessions",
+            "description": (
+                "Query climbing sessions grouped by date and crag. Each session contains "
+                "nested ascents (routes climbed). Filter by date range or crag name."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "date_from": {
+                        "type": "string",
+                        "description": "Start date in YYYY-MM-DD format.",
+                    },
+                    "date_to": {
+                        "type": "string",
+                        "description": "End date in YYYY-MM-DD format.",
+                    },
+                    "crag_name": {
+                        "type": "string",
+                        "description": "Filter by crag name (partial match, case-insensitive).",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Max sessions to return (default 20).",
                     },
                 },
                 "required": [],
@@ -447,6 +481,36 @@ async def _get_training_overview(args: dict[str, Any], session: AsyncSession) ->
     return json.dumps(overview, default=str)
 
 
+async def _get_sessions(args: dict[str, Any], session: AsyncSession) -> str:
+    """Query climbing sessions with nested ascents."""
+    limit = min(args.get("limit", 20), 50)
+
+    date_from = date.fromisoformat(args["date_from"]) if args.get("date_from") else None
+    date_to = date.fromisoformat(args["date_to"]) if args.get("date_to") else None
+
+    crag_id = None
+    if crag_name := args.get("crag_name"):
+        normalized_crag = normalize_name(crag_name)
+        crag_stmt = select(Crag).where(Crag.name_normalized.contains(normalized_crag))
+        result = await session.exec(crag_stmt)
+        crag = result.first()
+        if crag:
+            crag_id = crag.id
+        else:
+            return json.dumps({"sessions": [], "count": 0, "note": f"No crag found matching '{crag_name}'"})
+
+    sessions = await list_climbing_sessions(
+        session,
+        date_from=date_from,
+        date_to=date_to,
+        crag_id=crag_id,
+        limit=limit,
+    )
+
+    items = [_session_to_dict(cs) for cs in sessions]
+    return json.dumps({"sessions": items, "count": len(items)}, default=str)
+
+
 async def handle(tool_name: str, arguments: dict[str, Any], context: dict[str, Any]) -> str | None:
     """Handle a tool call. Returns None if the tool name is not ours."""
     session: AsyncSession | None = context.get("db_session")
@@ -456,6 +520,7 @@ async def handle(tool_name: str, arguments: dict[str, Any], context: dict[str, A
         "get_ascents": _get_ascents,
         "get_climbing_stats": _get_climbing_stats,
         "get_training_overview": _get_training_overview,
+        "get_sessions": _get_sessions,
     }
 
     handler = handlers.get(tool_name)

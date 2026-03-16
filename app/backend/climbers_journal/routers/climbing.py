@@ -39,9 +39,11 @@ class ClimbingSessionRequest(BaseModel):
     venue_type: VenueType = VenueType.outdoor_crag
     default_grade_sys: GradeSystem | None = None
     ascents: list[AscentInput]
+    notes: str | None = None  # session-level notes
 
 
 class ClimbingSessionResponse(BaseModel):
+    session_id: int | None = None
     crag_id: int
     crag_name: str
     crag_created: bool
@@ -97,6 +99,39 @@ class AscentResponse(BaseModel):
     crag_name: str | None
     route_name: str | None
     grade: str | None
+    session_id: int | None = None
+
+
+class LinkedActivityData(BaseModel):
+    id: int
+    duration_s: int
+    avg_hr: int | None
+    max_hr: int | None
+
+
+class SessionAscentResponse(BaseModel):
+    id: int
+    date: datetime.date
+    route_name: str | None
+    grade: str | None
+    tick_type: str
+    tries: int | None
+    rating: int | None
+    notes: str | None
+    partner: str | None
+    route_id: int | None
+    crag_id: int
+
+
+class SessionDetailResponse(BaseModel):
+    id: int
+    date: datetime.date
+    crag_id: int
+    crag_name: str | None
+    notes: str | None
+    linked_activity: LinkedActivityData | None
+    ascents: list[SessionAscentResponse]
+    ascent_count: int
 
 
 # ── Bulk Session Create ────────────────────────────────────────────────
@@ -115,9 +150,80 @@ async def create_climbing_session(
         venue_type=body.venue_type,
         default_grade_sys=body.default_grade_sys,
         ascents_data=[a.model_dump() for a in body.ascents],
+        session_notes=body.notes,
     )
     await session.commit()
     return result
+
+
+# ── Climbing Sessions ─────────────────────────────────────────────────
+
+
+@router.get("/sessions/climbing", response_model=list[SessionDetailResponse])
+async def list_climbing_sessions(
+    date_from: datetime.date | None = None,
+    date_to: datetime.date | None = None,
+    crag_id: int | None = None,
+    offset: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    session: AsyncSession = Depends(get_session),
+):
+    sessions = await svc.list_climbing_sessions(
+        session,
+        date_from=date_from,
+        date_to=date_to,
+        crag_id=crag_id,
+        offset=offset,
+        limit=limit,
+    )
+    return [_serialize_session(cs) for cs in sessions]
+
+
+@router.get("/sessions/climbing/{session_id}", response_model=SessionDetailResponse)
+async def get_climbing_session(
+    session_id: int,
+    session: AsyncSession = Depends(get_session),
+):
+    cs = await svc.get_climbing_session(session, session_id)
+    if cs is None:
+        raise HTTPException(status_code=404, detail="Climbing session not found.")
+    return _serialize_session(cs)
+
+
+def _serialize_session(cs) -> dict:
+    linked = None
+    if cs.linked_activity:
+        linked = {
+            "id": cs.linked_activity.id,
+            "duration_s": cs.linked_activity.duration_s,
+            "avg_hr": cs.linked_activity.avg_hr,
+            "max_hr": cs.linked_activity.max_hr,
+        }
+    return {
+        "id": cs.id,
+        "date": cs.date,
+        "crag_id": cs.crag_id,
+        "crag_name": cs.crag_name,
+        "notes": cs.notes,
+        "linked_activity": linked,
+        "ascents": [
+            {
+                "id": a.id,
+                "date": a.date,
+                "route_name": a.route_name,
+                "grade": a.grade,
+                "tick_type": a.tick_type.value,
+                "tries": a.tries,
+                "rating": a.rating,
+                "notes": a.notes,
+                "partner": a.partner,
+                "route_id": a.route_id,
+                "crag_id": a.crag_id,
+            }
+            for a in (cs.ascents or [])
+        ],
+        "ascent_count": len(cs.ascents or []),
+    }
 
 
 # ── Crags ──────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-"""Dashboard stats endpoints."""
+"""Dashboard stats and feed endpoints."""
 
 import calendar as cal
 import datetime
@@ -17,6 +17,7 @@ from climbers_journal.models.climbing import (
     VenueType,
 )
 from climbers_journal.models.endurance import EnduranceActivity
+from climbers_journal.services import climbing as svc
 
 router = APIRouter(prefix="/stats", tags=["stats"])
 
@@ -523,3 +524,35 @@ async def get_weekly(
         days=days,
         session_streak=session_streak,
     )
+
+
+# ── Unified Feed ─────────────────────────────────────────────────────
+
+
+@router.get("/feed")
+async def get_feed(
+    type: str = Query("all", description="all, climbing, or endurance"),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    session: AsyncSession = Depends(get_session),
+):
+    return await svc.get_activity_feed(
+        session, feed_type=type, offset=offset, limit=limit
+    )
+
+
+# ── Data Health ──────────────────────────────────────────────────────
+
+
+class DataHealthResponse(BaseModel):
+    total_sessions: int
+    total_ascents: int
+    orphaned_ascents: int
+    total_endurance_activities: int
+
+
+@router.get("/health", response_model=DataHealthResponse)
+async def get_data_health(
+    session: AsyncSession = Depends(get_session),
+):
+    return await svc.get_data_health(session)

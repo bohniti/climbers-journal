@@ -70,39 +70,39 @@ Three problems with the current activity system:
 
 ### Step 2: ClimbingSession model & API
 
-- [ ] Add `ClimbingSession` SQLModel:
+- [x] Add `ClimbingSession` SQLModel:
   - `id`, `date`, `crag_id` (FK), `crag_name` (denorm), `notes` (session-level notes)
   - `linked_activity_id` (nullable FK to `endurance_activity.id` — for auto-linked watch data)
   - `created_at`
   - `UNIQUE(date, crag_id)` — one session per crag per day, idempotent creates
   - Keep `partner` on Ascent (per-route partner is valid — belayer changes between routes)
   - Keep `notes` on Ascent too (route-specific beta vs session-level notes)
-- [ ] Add `session_id` FK to `Ascent` model (nullable for migration)
-- [ ] Alembic migration: create `climbing_session` table, add `session_id` column to `ascent`
+- [x] Add `session_id` FK to `Ascent` model (nullable for migration)
+- [x] Alembic migration: create `climbing_session` table, add `session_id` column to `ascent`
   - Add indexes: `ix_session_date`, `ix_session_crag_id`, `ix_ascent_session_id`
-- [ ] Data migration: group existing ascents by (date, crag_id) → create sessions, backfill `session_id`
+- [x] Data migration: group existing ascents by (date, crag_id) → create sessions, backfill `session_id`
   - Handle: ascents with NULL crag_id → skip, log warning
   - Handle: ascents from different API calls but same (date, crag) → merge into one session
-- [ ] Update `create_climbing_session` service to create a `ClimbingSession` record and link ascents
+- [x] Update `create_climbing_session` service to create a `ClimbingSession` record and link ascents
   - If session already exists for (date, crag_id): return existing and append ascents (idempotent)
-- [ ] Add `GET /sessions/climbing` endpoint — returns sessions with nested ascents
+- [x] Add `GET /sessions/climbing` endpoint — returns sessions with nested ascents
   - Pagination by session count (not ascent count): `?offset=0&limit=20`
   - Eager-load ascents: `selectinload(ClimbingSession.ascents)`
   - Filters: `date_from`, `date_to`, `crag_id`
-- [ ] Add `GET /sessions/climbing/{session_id}` endpoint — single session detail
-- [ ] Update `ClimbingSessionResponse` to include session ID, nested ascent list, and linked activity data (duration, HR)
-- [ ] Keep `GET /ascents` working for backward compatibility (copilot tools use it)
-- [ ] Auto-link `RockClimbing` endurance activities:
+- [x] Add `GET /sessions/climbing/{session_id}` endpoint — single session detail
+- [x] Update `ClimbingSessionResponse` to include session ID, nested ascent list, and linked activity data (duration, HR)
+- [x] Keep `GET /ascents` working for backward compatibility (copilot tools use it)
+- [x] Auto-link `RockClimbing` endurance activities:
   - On session create: check if a RockClimbing endurance activity exists for the same date → link it
   - On endurance sync: check if type=RockClimbing and a session exists for that date → link it
   - Ambiguous match (multiple sessions same date): pick session with most ascents, log warning
-- [ ] Add `GET /feed` endpoint in `stats.py`:
+- [x] Add `GET /feed` endpoint in `stats.py`:
   - SQL `UNION ALL` of sessions + endurance activities, ordered by date desc
   - Single cursor pagination: `?offset=0&limit=20&type=all|climbing|endurance`
   - Returns `ActivityItem[]` (discriminated union with `kind` field)
-- [ ] Add `GET /stats/health` endpoint: total sessions, ascents, endurance activities, orphaned ascents (session_id=NULL), unknown sport types — for migration verification
-- [ ] Name propagation helper: `propagate_crag_name(session, crag_id, new_name)` updates `crag_name` on all related Ascent AND ClimbingSession records (resolves TODOS.md P2 item). DRY: single function for both tables.
-- [ ] Add `get_sessions()` copilot tool in `tools/journal.py`: query sessions with nested ascents by date range, crag name, etc. Complements existing `get_ascents()`.
+- [x] Add `GET /stats/health` endpoint: total sessions, ascents, endurance activities, orphaned ascents (session_id=NULL), unknown sport types — for migration verification
+- [x] Name propagation helper: `propagate_crag_name(session, crag_id, new_name)` updates `crag_name` on all related Ascent AND ClimbingSession records (resolves TODOS.md P2 item). DRY: single function for both tables.
+- [x] Add `get_sessions()` copilot tool in `tools/journal.py`: query sessions with nested ascents by date range, crag name, etc. Complements existing `get_ascents()`.
 
 **Files:** `app/backend/climbers_journal/models/climbing.py`, `app/backend/climbers_journal/routers/climbing.py`, `app/backend/climbers_journal/services/climbing.py`, `app/backend/alembic/versions/` (new migration), `app/backend/climbers_journal/routers/stats.py`, `app/backend/climbers_journal/tools/journal.py`
 

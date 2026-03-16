@@ -9,6 +9,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from climbers_journal.models.endurance import ActivitySource, EnduranceActivity
 from climbers_journal.services import intervals
+from climbers_journal.services.climbing import auto_link_activity_to_session
 
 logger = logging.getLogger(__name__)
 
@@ -136,9 +137,11 @@ async def sync_activities(
                 if "id" not in raw:
                     continue
                 data = _parse_activity(raw)
-                _, created = await upsert_activity(session, data)
+                activity, created = await upsert_activity(session, data)
                 if created:
                     chunk_created += 1
+                    # Auto-link RockClimbing activities to climbing sessions
+                    await auto_link_activity_to_session(session, activity)
                 else:
                     chunk_updated += 1
 

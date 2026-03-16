@@ -1,6 +1,7 @@
 from climbers_journal.models.climbing import (
     Area,
     Ascent,
+    ClimbingSession,
     Crag,
     GradeSystem,
     Route,
@@ -17,6 +18,7 @@ __all__ = [
     "ActivitySource",
     "Area",
     "Ascent",
+    "ClimbingSession",
     "Crag",
     "EnduranceActivity",
     "GradeSystem",
