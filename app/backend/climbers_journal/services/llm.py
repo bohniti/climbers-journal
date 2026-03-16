@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
 import os
-from dataclasses import dataclass
 from typing import Any
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, RateLimitError
 
+from climbers_journal.config import get_settings
 from climbers_journal.tools.registry import dispatch, get_all_definitions
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = (
     "You are a helpful training assistant for a climber and endurance athlete. "
@@ -26,58 +30,80 @@ SYSTEM_PROMPT = (
     "Be concise and specific — reference actual numbers from the data."
 )
 MAX_TOOL_ROUNDS = 10
-
-
-@dataclass(frozen=True)
-class LLMProvider:
-    name: str
-    model: str
-    base_url: str
-    api_key_env: str
-
-
-PROVIDERS: dict[str, LLMProvider] = {
-    "kimi": LLMProvider(
-        name="kimi",
-        model="moonshotai/kimi-k2.5",
-        base_url="https://integrate.api.nvidia.com/v1",
-        api_key_env="NVIDIA_API_KEY",
-    ),
-    "gemini": LLMProvider(
-        name="gemini",
-        model="gemini-2.5-flash",
-        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-        api_key_env="GOOGLE_API_KEY",
-    ),
-}
-
-DEFAULT_PROVIDER = os.getenv("DEFAULT_LLM_PROVIDER", "kimi")
+MAX_RETRIES = 2
+RETRY_DELAY_S = 6
 
 _clients: dict[str, AsyncOpenAI] = {}
 
 
-def _get_client(provider: LLMProvider) -> AsyncOpenAI:
-    if provider.name not in _clients:
-        _clients[provider.name] = AsyncOpenAI(
-            api_key=os.getenv(provider.api_key_env, ""),
-            base_url=provider.base_url,
+def clear_clients() -> None:
+    """Reset cached AsyncOpenAI instances (for tests)."""
+    _clients.clear()
+
+
+def _get_client(provider_name: str) -> AsyncOpenAI:
+    """Get or create an AsyncOpenAI client for the given provider."""
+    if provider_name not in _clients:
+        settings = get_settings()
+        provider_cfg = settings.llm.providers[provider_name]
+        _clients[provider_name] = AsyncOpenAI(
+            api_key=os.getenv(provider_cfg.api_key_env, ""),
+            base_url=provider_cfg.base_url,
         )
-    return _clients[provider.name]
+    return _clients[provider_name]
 
 
-def get_provider(name: str | None = None) -> LLMProvider:
-    key = name or DEFAULT_PROVIDER
-    if key not in PROVIDERS:
-        raise ValueError(f"Unknown LLM provider: {key}. Available: {list(PROVIDERS)}")
-    return PROVIDERS[key]
+def get_provider_name(name: str | None = None) -> str:
+    """Resolve and validate the provider name."""
+    settings = get_settings()
+    key = name or settings.llm.default_provider
+    if key not in settings.llm.providers:
+        raise ValueError(
+            f"Unknown LLM provider: {key}. Available: {list(settings.llm.providers)}"
+        )
+    return key
 
 
-@dataclass
+async def _call_with_retry(
+    client: AsyncOpenAI,
+    model: str,
+    messages: list[dict],
+    tools: list | None,
+) -> Any:
+    """Call chat.completions.create with rate-limit retry.
+
+    Catches openai.RateLimitError, sleeps RETRY_DELAY_S, retries up to
+    MAX_RETRIES times, then re-raises.
+    """
+    for attempt in range(MAX_RETRIES + 1):
+        try:
+            return await client.chat.completions.create(
+                model=model,
+                messages=messages,
+                tools=tools if tools else None,
+            )
+        except RateLimitError:
+            if attempt < MAX_RETRIES:
+                logger.warning(
+                    "Rate limited (attempt %d/%d), retrying in %ds...",
+                    attempt + 1,
+                    MAX_RETRIES + 1,
+                    RETRY_DELAY_S,
+                )
+                await asyncio.sleep(RETRY_DELAY_S)
+            else:
+                logger.error(
+                    "Rate limited — all %d retries exhausted", MAX_RETRIES + 1
+                )
+                raise
+
+
 class ChatResult:
     """Result of a chat completion, including optional draft card."""
 
-    reply: str
-    draft_card: dict[str, Any] | None = None
+    def __init__(self, reply: str, draft_card: dict[str, Any] | None = None):
+        self.reply = reply
+        self.draft_card = draft_card
 
 
 async def chat(
@@ -85,39 +111,28 @@ async def chat(
     provider_name: str | None = None,
     context: dict[str, Any] | None = None,
 ) -> ChatResult:
-    """Run a chat completion with tool use loop.
-
-    *messages* is the full conversation history (system + user + assistant msgs).
-    *provider_name* selects which LLM to use (default from env).
-    *context* carries request-scoped resources (e.g. ``db_session``).
-    Returns a ChatResult with the reply text and optional draft_card.
-    """
-    provider = get_provider(provider_name)
-    client = _get_client(provider)
+    """Run a chat completion with tool use loop."""
+    name = get_provider_name(provider_name)
+    settings = get_settings()
+    provider_cfg = settings.llm.providers[name]
+    client = _get_client(name)
     tools = get_all_definitions()
     ctx = context or {}
 
     for _ in range(MAX_TOOL_ROUNDS):
-        response = await client.chat.completions.create(
-            model=provider.model,
-            messages=messages,
-            tools=tools if tools else None,
-        )
+        response = await _call_with_retry(client, provider_cfg.model, messages, tools)
 
         choice = response.choices[0]
         assistant_message = choice.message
 
-        # Append the assistant message to history
         messages.append(assistant_message.model_dump(exclude_none=True))
 
-        # If no tool calls, we're done
         if not assistant_message.tool_calls:
             return ChatResult(
                 reply=assistant_message.content or "",
                 draft_card=ctx.get("draft_card"),
             )
 
-        # Process each tool call
         for tool_call in assistant_message.tool_calls:
             fn = tool_call.function
             arguments = json.loads(fn.arguments) if fn.arguments else {}
@@ -131,7 +146,6 @@ async def chat(
                 }
             )
 
-    # Safety: if we hit the limit, return whatever we have
     return ChatResult(
         reply=assistant_message.content or "Sorry, I wasn't able to complete that request.",
         draft_card=ctx.get("draft_card"),

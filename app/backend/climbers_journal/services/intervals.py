@@ -5,7 +5,7 @@ from datetime import date, timedelta
 
 import httpx
 
-BASE_URL = "https://intervals.icu/api/v1"
+from climbers_journal.config import get_settings
 
 _client: httpx.AsyncClient | None = None
 
@@ -14,13 +14,19 @@ def _get_client() -> httpx.AsyncClient:
     """Return a shared httpx.AsyncClient, creating it on first use."""
     global _client
     if _client is None or _client.is_closed:
-        api_key = os.getenv("INTERVALS_API_KEY", "")
+        settings = get_settings()
+        api_key = os.getenv(settings.intervals.api_key_env, "")
         _client = httpx.AsyncClient(auth=("API_KEY", api_key))
     return _client
 
 
+def _base_url() -> str:
+    return get_settings().intervals.base_url
+
+
 def _athlete_id() -> str:
-    return os.getenv("INTERVALS_ATHLETE_ID", "")
+    settings = get_settings()
+    return os.getenv(settings.intervals.athlete_id_env, "")
 
 
 async def get_activities(
@@ -34,7 +40,7 @@ async def get_activities(
         "newest": newest or today.isoformat(),
     }
     resp = await _get_client().get(
-        f"{BASE_URL}/athlete/{_athlete_id()}/activities",
+        f"{_base_url()}/athlete/{_athlete_id()}/activities",
         params=params,
     )
     resp.raise_for_status()
@@ -44,7 +50,6 @@ async def get_activities(
 async def get_latest_activity() -> dict:
     """Fetch the most recent activity (last 7 days)."""
     today = date.today()
-    # intervals.icu returns activities newest-first; [0] is the most recent
     activities = await get_activities(
         oldest=(today - timedelta(days=7)).isoformat(),
         newest=today.isoformat(),
@@ -60,7 +65,7 @@ async def get_wellness(oldest: str | None = None, newest: str | None = None) -> 
         "newest": newest or today.isoformat(),
     }
     resp = await _get_client().get(
-        f"{BASE_URL}/athlete/{_athlete_id()}/wellness",
+        f"{_base_url()}/athlete/{_athlete_id()}/wellness",
         params=params,
     )
     resp.raise_for_status()

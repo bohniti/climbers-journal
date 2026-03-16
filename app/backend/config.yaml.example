@@ -1,0 +1,26 @@
+# Climbers Journal — application config
+# Copy to config.yaml and adjust as needed.
+# Secrets (API keys, DB URL) stay in .env
+
+llm:
+  default_provider: gemini
+  providers:
+    gemini:
+      model: gemini-2.5-flash-lite
+      base_url: https://generativelanguage.googleapis.com/v1beta/openai/
+      api_key_env: GOOGLE_API_KEY
+      rpm_limit: 10
+      tpm_limit: 250000
+    kimi:
+      model: moonshotai/kimi-k2.5
+      base_url: https://integrate.api.nvidia.com/v1
+      api_key_env: NVIDIA_API_KEY
+
+intervals:
+  base_url: https://intervals.icu/api/v1
+  api_key_env: INTERVALS_API_KEY
+  athlete_id_env: INTERVALS_ATHLETE_ID
+
+cors:
+  origins:
+    - http://localhost:3000

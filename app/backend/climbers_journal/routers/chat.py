@@ -12,7 +12,8 @@ from fastapi import APIRouter, Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from climbers_journal.db import get_session
-from climbers_journal.services.llm import DEFAULT_PROVIDER, PROVIDERS, SYSTEM_PROMPT, chat
+from climbers_journal.config import get_settings
+from climbers_journal.services.llm import SYSTEM_PROMPT, chat, get_provider_name
 
 router = APIRouter()
 
@@ -51,7 +52,7 @@ class ChatResponse(BaseModel):
 
 @router.get("/providers")
 async def list_providers() -> list[str]:
-    return list(PROVIDERS)
+    return list(get_settings().llm.providers)
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -77,6 +78,6 @@ async def post_chat(
     return ChatResponse(
         conversation_id=conv_id,
         reply=result.reply,
-        provider=req.provider or DEFAULT_PROVIDER,
+        provider=get_provider_name(req.provider),
         draft_card=result.draft_card,
     )
