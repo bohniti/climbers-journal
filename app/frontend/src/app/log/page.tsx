@@ -15,8 +15,11 @@ import {
   formatDuration,
   formatDate,
   formatDistance,
-  sportIcon,
+  sportCategory,
 } from "@/lib/constants";
+import ActivityIcon from "@/components/ActivityIcon";
+import SessionEditModal from "@/components/SessionEditModal";
+import AscentEditModal from "@/components/AscentEditModal";
 
 // ── Filter state ──────────────────────────────────────────────────────
 
@@ -185,6 +188,10 @@ export default function LogPage() {
                 <ClimbingSessionCard
                   key={`s-${item.data.id}`}
                   session={item.data}
+                  onRefresh={() => {
+                    setOffset(0);
+                    fetchItems(0, false);
+                  }}
                 />
               ) : (
                 <EnduranceCard
@@ -221,10 +228,17 @@ export default function LogPage() {
 
 type ExpandLevel = "collapsed" | "summary" | "routes";
 
-function ClimbingSessionCard({ session }: { session: FeedSessionData }) {
+function ClimbingSessionCard({
+  session,
+  onRefresh,
+}: {
+  session: FeedSessionData;
+  onRefresh: () => void;
+}) {
   const defaultLevel: ExpandLevel =
     session.ascent_count > 10 ? "summary" : "collapsed";
   const [expand, setExpand] = useState<ExpandLevel>(defaultLevel);
+  const [editSession, setEditSession] = useState(false);
 
   const cycleExpand = () => {
     if (expand === "collapsed") setExpand("summary");
@@ -266,14 +280,18 @@ function ClimbingSessionCard({ session }: { session: FeedSessionData }) {
         className="w-full px-4 py-3"
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-900/30 text-lg">
-            {"\u{1F9D7}"}
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-900/30">
+            <ActivityIcon category="climbing" size="md" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="truncate text-sm font-medium text-slate-100">
+              <Link
+                href={`/crags/${session.crag_id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="truncate text-sm font-medium text-slate-100 hover:text-emerald-400"
+              >
                 {session.crag_name ?? "Unknown crag"}
-              </span>
+              </Link>
               {linkedDuration != null && (
                 <span className="shrink-0 rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">
                   {formatDuration(linkedDuration)}
@@ -294,6 +312,20 @@ function ClimbingSessionCard({ session }: { session: FeedSessionData }) {
               )}
             </div>
           </div>
+          {/* Edit button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditSession(true);
+            }}
+            className="shrink-0 rounded-lg p-1.5 text-slate-500 hover:bg-slate-800 hover:text-slate-300"
+            title="Edit session"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+            </svg>
+          </button>
           {/* Tick type pills */}
           <div className="hidden shrink-0 gap-1 sm:flex">
             {Object.entries(tickBreakdown).map(([tt, count]) => (
@@ -357,42 +389,84 @@ function ClimbingSessionCard({ session }: { session: FeedSessionData }) {
       {expand === "routes" && (
         <div className="border-t border-slate-800">
           {ascents.map((ascent) => (
-            <AscentRow key={ascent.id} ascent={ascent} />
+            <AscentRow key={ascent.id} ascent={ascent} onRefresh={onRefresh} />
           ))}
         </div>
+      )}
+
+      {/* Session edit modal */}
+      {editSession && (
+        <SessionEditModal
+          session={session}
+          onClose={() => setEditSession(false)}
+          onSaved={() => {
+            setEditSession(false);
+            onRefresh();
+          }}
+        />
       )}
     </div>
   );
 }
 
-function AscentRow({ ascent }: { ascent: FeedSessionAscent }) {
+function AscentRow({
+  ascent,
+  onRefresh,
+}: {
+  ascent: FeedSessionAscent;
+  onRefresh: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+
   return (
-    <div className="flex items-center gap-3 border-b border-slate-800/50 px-4 py-2 last:border-b-0">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          <span className="truncate text-sm text-slate-200">
-            {ascent.route_name ?? "Unnamed route"}
-          </span>
-          {ascent.grade && (
-            <span className="shrink-0 rounded bg-slate-800 px-1.5 py-0.5 font-mono text-xs font-medium text-slate-300">
-              {ascent.grade}
+    <>
+      <div className="flex items-center gap-3 border-b border-slate-800/50 px-4 py-2 last:border-b-0">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span className="truncate text-sm text-slate-200">
+              {ascent.route_name ?? "Unnamed route"}
             </span>
-          )}
-          <span
-            className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-              TICK_COLORS[ascent.tick_type] ?? TICK_COLORS.attempt
-            }`}
-          >
-            {tickTypeLabel(ascent.tick_type)}
-          </span>
+            {ascent.grade && (
+              <span className="shrink-0 rounded bg-slate-800 px-1.5 py-0.5 font-mono text-xs font-medium text-slate-300">
+                {ascent.grade}
+              </span>
+            )}
+            <span
+              className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                TICK_COLORS[ascent.tick_type] ?? TICK_COLORS.attempt
+              }`}
+            >
+              {tickTypeLabel(ascent.tick_type)}
+            </span>
+          </div>
         </div>
+        {ascent.tries != null && (
+          <span className="shrink-0 text-[11px] text-slate-500">
+            {ascent.tries} {ascent.tries === 1 ? "try" : "tries"}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="shrink-0 rounded p-1 text-slate-600 hover:bg-slate-800 hover:text-slate-400"
+          title="Edit ascent"
+        >
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+          </svg>
+        </button>
       </div>
-      {ascent.tries != null && (
-        <span className="shrink-0 text-[11px] text-slate-500">
-          {ascent.tries} {ascent.tries === 1 ? "try" : "tries"}
-        </span>
+      {editing && (
+        <AscentEditModal
+          ascent={ascent}
+          onClose={() => setEditing(false)}
+          onSaved={() => {
+            setEditing(false);
+            onRefresh();
+          }}
+        />
       )}
-    </div>
+    </>
   );
 }
 
@@ -408,8 +482,8 @@ function EnduranceCard({ activity }: { activity: ActivityResponse }) {
       className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-left transition-colors hover:border-slate-600"
     >
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-900/30 text-lg">
-          {sportIcon(activity.type)}
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-900/30">
+          <ActivityIcon category={sportCategory(activity.type)} size="md" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">

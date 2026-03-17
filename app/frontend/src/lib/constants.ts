@@ -40,80 +40,70 @@ export interface SportTypeInfo {
 
 export const SPORT_TYPES: Record<string, SportTypeInfo> = {
   // Running
-  Run:              { icon: "🏃", label: "Run", category: "run" },
-  TrailRun:         { icon: "⛰️", label: "Trail Run", category: "run" },
-  VirtualRun:       { icon: "🏃", label: "Virtual Run", category: "run" },
+  Run:              { icon: "runner.png", label: "Run", category: "run" },
+  TrailRun:         { icon: "runner.png", label: "Trail Run", category: "run" },
+  VirtualRun:       { icon: "runner.png", label: "Virtual Run", category: "run" },
 
   // Cycling
-  Ride:             { icon: "🚴", label: "Ride", category: "ride" },
-  GravelRide:       { icon: "🚴", label: "Gravel Ride", category: "ride" },
-  MountainBikeRide: { icon: "🚵", label: "Mountain Bike", category: "ride" },
-  EBikeRide:        { icon: "🚴", label: "E-Bike Ride", category: "ride" },
-  EMountainBikeRide:{ icon: "🚵", label: "E-MTB Ride", category: "ride" },
-  VirtualRide:      { icon: "🚴", label: "Virtual Ride", category: "ride" },
-  Velomobile:       { icon: "🚴", label: "Velomobile", category: "ride" },
-  Handcycle:        { icon: "🚴", label: "Handcycle", category: "ride" },
+  Ride:             { icon: "cycling.png", label: "Ride", category: "ride" },
+  GravelRide:       { icon: "cycling.png", label: "Gravel Ride", category: "ride" },
+  MountainBikeRide: { icon: "cycling.png", label: "Mountain Bike", category: "ride" },
+  EBikeRide:        { icon: "cycling.png", label: "E-Bike Ride", category: "ride" },
+  EMountainBikeRide:{ icon: "cycling.png", label: "E-MTB Ride", category: "ride" },
+  VirtualRide:      { icon: "cycling.png", label: "Virtual Ride", category: "ride" },
+  Velomobile:       { icon: "cycling.png", label: "Velomobile", category: "ride" },
+  Handcycle:        { icon: "cycling.png", label: "Handcycle", category: "ride" },
 
   // Swimming
-  Swim:             { icon: "🏊", label: "Swim", category: "swim" },
+  Swim:             { icon: "default.png", label: "Swim", category: "swim" },
 
   // Winter sports
-  AlpineSki:        { icon: "⛷️", label: "Alpine Ski", category: "winter" },
-  BackcountrySki:   { icon: "🎿", label: "Backcountry Ski", category: "winter" },
-  NordicSki:        { icon: "🎿", label: "Nordic Ski", category: "winter" },
-  Snowboard:        { icon: "🏂", label: "Snowboard", category: "winter" },
-  Snowshoe:         { icon: "🥾", label: "Snowshoe", category: "winter" },
-  IceSkate:         { icon: "⛸️", label: "Ice Skate", category: "winter" },
+  AlpineSki:        { icon: "skiing.png", label: "Alpine Ski", category: "winter" },
+  BackcountrySki:   { icon: "skiing.png", label: "Backcountry Ski", category: "winter" },
+  NordicSki:        { icon: "skiing.png", label: "Nordic Ski", category: "winter" },
+  Snowboard:        { icon: "skiing.png", label: "Snowboard", category: "winter" },
+  Snowshoe:         { icon: "skiing.png", label: "Snowshoe", category: "winter" },
+  IceSkate:         { icon: "skiing.png", label: "Ice Skate", category: "winter" },
 
   // Climbing
-  RockClimbing:     { icon: "🧗", label: "Rock Climbing", category: "climbing" },
+  RockClimbing:     { icon: "climber.png", label: "Rock Climbing", category: "climbing" },
 
   // Water sports
-  Canoeing:         { icon: "🛶", label: "Canoeing", category: "water" },
-  Kayaking:         { icon: "🛶", label: "Kayaking", category: "water" },
-  Rowing:           { icon: "🚣", label: "Rowing", category: "water" },
-  VirtualRow:       { icon: "🚣", label: "Virtual Row", category: "water" },
-  StandUpPaddling:  { icon: "🏄", label: "SUP", category: "water" },
-  Surfing:          { icon: "🏄", label: "Surfing", category: "water" },
-  Kitesurf:         { icon: "🪁", label: "Kitesurf", category: "water" },
-  Windsurf:         { icon: "🏄", label: "Windsurf", category: "water" },
-  Sail:             { icon: "⛵", label: "Sailing", category: "water" },
+  Canoeing:         { icon: "default.png", label: "Canoeing", category: "water" },
+  Kayaking:         { icon: "default.png", label: "Kayaking", category: "water" },
+  Rowing:           { icon: "default.png", label: "Rowing", category: "water" },
+  VirtualRow:       { icon: "default.png", label: "Virtual Row", category: "water" },
+  StandUpPaddling:  { icon: "default.png", label: "SUP", category: "water" },
+  Surfing:          { icon: "default.png", label: "Surfing", category: "water" },
+  Kitesurf:         { icon: "default.png", label: "Kitesurf", category: "water" },
+  Windsurf:         { icon: "default.png", label: "Windsurf", category: "water" },
+  Sail:             { icon: "default.png", label: "Sailing", category: "water" },
 
   // Fitness & hiking
-  Hike:             { icon: "🥾", label: "Hike", category: "fitness" },
-  Walk:             { icon: "🚶", label: "Walk", category: "fitness" },
-  Yoga:             { icon: "🧘", label: "Yoga", category: "fitness" },
-  Pilates:          { icon: "🧘", label: "Pilates", category: "fitness" },
-  WeightTraining:   { icon: "🏋️", label: "Weight Training", category: "fitness" },
-  Crossfit:         { icon: "🏋️", label: "CrossFit", category: "fitness" },
-  HighIntensityIntervalTraining: { icon: "🔥", label: "HIIT", category: "fitness" },
-  Elliptical:       { icon: "🏋️", label: "Elliptical", category: "fitness" },
-  StairStepper:     { icon: "🏋️", label: "Stair Stepper", category: "fitness" },
-  Workout:          { icon: "💪", label: "Workout", category: "fitness" },
+  Hike:             { icon: "gym.png", label: "Hike", category: "fitness" },
+  Walk:             { icon: "gym.png", label: "Walk", category: "fitness" },
+  Yoga:             { icon: "gym.png", label: "Yoga", category: "fitness" },
+  Pilates:          { icon: "gym.png", label: "Pilates", category: "fitness" },
+  WeightTraining:   { icon: "gym.png", label: "Weight Training", category: "fitness" },
+  Crossfit:         { icon: "gym.png", label: "CrossFit", category: "fitness" },
+  HighIntensityIntervalTraining: { icon: "gym.png", label: "HIIT", category: "fitness" },
+  Elliptical:       { icon: "gym.png", label: "Elliptical", category: "fitness" },
+  StairStepper:     { icon: "gym.png", label: "Stair Stepper", category: "fitness" },
+  Workout:          { icon: "gym.png", label: "Workout", category: "fitness" },
 
   // Racquet sports & other
-  Badminton:        { icon: "🏸", label: "Badminton", category: "other" },
-  Golf:             { icon: "⛳", label: "Golf", category: "other" },
-  InlineSkate:      { icon: "🛼", label: "Inline Skate", category: "other" },
-  Pickleball:       { icon: "🏓", label: "Pickleball", category: "other" },
-  Racquetball:      { icon: "🏸", label: "Racquetball", category: "other" },
-  RollerSki:        { icon: "🎿", label: "Roller Ski", category: "other" },
-  Skateboard:       { icon: "🛹", label: "Skateboard", category: "other" },
-  Soccer:           { icon: "⚽", label: "Soccer", category: "other" },
-  Squash:           { icon: "🏸", label: "Squash", category: "other" },
-  TableTennis:      { icon: "🏓", label: "Table Tennis", category: "other" },
-  Tennis:           { icon: "🎾", label: "Tennis", category: "other" },
-  Wheelchair:       { icon: "♿", label: "Wheelchair", category: "other" },
-};
-
-// ── Climbing sub-type icons ─────────────────────────────────────────
-
-export const CLIMBING_STYLE_ICONS: Record<string, string> = {
-  sport:      "🧗",
-  boulder:    "🪨",
-  multi_pitch:"⛰️",
-  trad:       "🏔️",
-  alpine:     "🏔️",
+  Badminton:        { icon: "default.png", label: "Badminton", category: "other" },
+  Golf:             { icon: "default.png", label: "Golf", category: "other" },
+  InlineSkate:      { icon: "default.png", label: "Inline Skate", category: "other" },
+  Pickleball:       { icon: "default.png", label: "Pickleball", category: "other" },
+  Racquetball:      { icon: "default.png", label: "Racquetball", category: "other" },
+  RollerSki:        { icon: "default.png", label: "Roller Ski", category: "other" },
+  Skateboard:       { icon: "default.png", label: "Skateboard", category: "other" },
+  Soccer:           { icon: "default.png", label: "Soccer", category: "other" },
+  Squash:           { icon: "default.png", label: "Squash", category: "other" },
+  TableTennis:      { icon: "default.png", label: "Table Tennis", category: "other" },
+  Tennis:           { icon: "default.png", label: "Tennis", category: "other" },
+  Wheelchair:       { icon: "default.png", label: "Wheelchair", category: "other" },
 };
 
 // ── Category chart colors (hex for Recharts + badge) ────────────────
@@ -150,12 +140,7 @@ export function getSportType(type: string): SportTypeInfo {
   if (typeof window !== "undefined") {
     console.warn(`Unknown sport type: "${type}", falling back to Workout`);
   }
-  return { icon: "💪", label: type, category: "fitness" };
-}
-
-/** Get the icon for a sport type */
-export function sportIcon(type: string): string {
-  return getSportType(type).icon;
+  return { icon: "default.png", label: type, category: "fitness" };
 }
 
 /** Map a sport type string to its category */

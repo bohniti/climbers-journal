@@ -2,6 +2,53 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.15.5.0] - 2026-03-17
+
+### Added
+- `PUT /sessions/climbing/{id}` endpoint for editing climbing sessions (crag change with cascade, notes)
+- `PUT /ascents/{id}` expanded with `route_id` and `grade` fields, with route name denormalization
+- `SessionEditModal` component with searchable crag combobox and crag change confirmation dialog
+- `AscentEditModal` component for editing grade, tick type, tries, rating, notes, and partner
+- `CragCombobox` reusable searchable dropdown component
+- Edit buttons (pencil icon) on session cards and ascent rows in the activity log
+- `updateSession()` and `updateAscent()` API client functions
+
+### Changed
+- Consolidated session serialization into single `serialize_session()` in climbing service (was duplicated in router and service)
+- `update_ascent()` now uses `exclude_unset=True` to support clearing fields (setting to null)
+- Session crag updates cascade to all ascents via bulk SQL update (single query, not N+1)
+- `IntegrityError` on session crag update returns 409 with clear message
+
+## [0.15.4.0] - 2026-03-17
+
+### Added
+- PNG icon system replacing all emoji icons across the app
+- `ActivityIcon` component with category-based PNG mapping (climber, runner, cycling, skiing, gym, default)
+- `VenueIcon` component for crag/gym venue display (home.png, gym.png)
+- 8 custom PNG icons in `public/icons/`
+
+### Changed
+- `SPORT_TYPES` icon field now stores PNG filenames instead of emoji strings
+- All UI components (dashboard, log, calendar, crags) use `ActivityIcon` instead of emoji rendering
+- Session streak indicator uses styled dot instead of fire emoji
+
+### Removed
+- `sportIcon()` helper function (replaced by `ActivityIcon` component)
+- `CLIMBING_STYLE_ICONS` constant (unused after icon migration)
+
+## [0.15.3.0] - 2026-03-17
+
+### Added
+- Crag browser page (`/crags`) with search, sort (last visited/name/session count), venue badges, and relative dates
+- Crag detail page (`/crags/[id]`) with quick-stats header (sessions, routes logged, best send, last visited) and paginated session history
+- Backend endpoints: `GET /crags/{id}`, `GET /crags/{id}/stats`, `GET /crags/{id}/sessions`
+- Enhanced `GET /crags` with search, sort, and inline stats (session count, last visited)
+- Crag name links on session cards in log page and dashboard recent activity
+- Nav link to crag browser
+
+### Fixed
+- PostgreSQL COALESCE type mismatch with asyncpg (date vs varchar)
+
 ## [0.15.2.0] - 2026-03-17
 
 ### Added

@@ -192,10 +192,41 @@ export interface CragResponse {
   default_grade_sys: string;
 }
 
+export interface CragWithStatsResponse extends CragResponse {
+  session_count: number;
+  last_visited: string | null;
+}
+
+export interface CragStatsResponse {
+  session_count: number;
+  route_count: number;
+  ascent_count: number;
+  last_visited: string | null;
+  hardest_send: {
+    grade: string;
+    route_name: string | null;
+    tick_type: string;
+    date: string;
+  } | null;
+}
+
+export interface CragSessionResponse {
+  id: number;
+  date: string;
+  crag_id: number;
+  crag_name: string | null;
+  notes: string | null;
+  linked_activity: FeedLinkedActivity | null;
+  ascents: FeedSessionAscent[];
+  ascent_count: number;
+}
+
 export async function listCrags(
-  opts: { offset?: number; limit?: number } = {}
-): Promise<CragResponse[]> {
+  opts: { search?: string; sort?: string; offset?: number; limit?: number } = {}
+): Promise<CragWithStatsResponse[]> {
   const params = new URLSearchParams();
+  if (opts.search) params.set("search", opts.search);
+  if (opts.sort) params.set("sort", opts.sort);
   if (opts.offset != null) params.set("offset", String(opts.offset));
   if (opts.limit != null) params.set("limit", String(opts.limit));
 
@@ -203,6 +234,42 @@ export async function listCrags(
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Failed to fetch crags (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
+export async function fetchCrag(cragId: number): Promise<CragResponse> {
+  const res = await fetch(`${API_BASE}/crags/${cragId}`);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to fetch crag (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
+export async function fetchCragStats(
+  cragId: number
+): Promise<CragStatsResponse> {
+  const res = await fetch(`${API_BASE}/crags/${cragId}/stats`);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to fetch crag stats (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
+export async function fetchCragSessions(
+  cragId: number,
+  opts: { offset?: number; limit?: number } = {}
+): Promise<CragSessionResponse[]> {
+  const params = new URLSearchParams();
+  if (opts.offset != null) params.set("offset", String(opts.offset));
+  if (opts.limit != null) params.set("limit", String(opts.limit));
+
+  const res = await fetch(`${API_BASE}/crags/${cragId}/sessions?${params}`);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to fetch crag sessions (${res.status}): ${text}`);
   }
   return res.json();
 }
@@ -248,6 +315,56 @@ export async function listAscents(
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Failed to fetch ascents (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
+// ── Ascent / Session Mutations ────────────────────────────────────────
+
+export interface AscentUpdateRequest {
+  date?: string;
+  tick_type?: string;
+  tries?: number | null;
+  rating?: number | null;
+  notes?: string | null;
+  partner?: string | null;
+  route_id?: number | null;
+  grade?: string | null;
+}
+
+export async function updateAscent(
+  ascentId: number,
+  data: AscentUpdateRequest
+): Promise<AscentResponse> {
+  const res = await fetch(`${API_BASE}/ascents/${ascentId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to update ascent (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
+export interface SessionUpdateRequest {
+  crag_id?: number;
+  notes?: string | null;
+}
+
+export async function updateSession(
+  sessionId: number,
+  data: SessionUpdateRequest
+): Promise<CragSessionResponse> {
+  const res = await fetch(`${API_BASE}/sessions/climbing/${sessionId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to update session (${res.status}): ${text}`);
   }
   return res.json();
 }

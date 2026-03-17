@@ -7,7 +7,8 @@ import {
   type CalendarData,
   type CalendarDayEntry,
 } from "@/lib/api";
-import { VENUE_COLORS, formatDuration, sportIcon } from "@/lib/constants";
+import { VENUE_COLORS, formatDuration, sportCategory } from "@/lib/constants";
+import ActivityIcon from "@/components/ActivityIcon";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -187,7 +188,7 @@ export default function CalendarPage() {
         {/* Climbing info */}
         {entry?.climbing && (
           <div className="flex items-center gap-1">
-            <span className="text-[10px]">{"\u{1F9D7}"}</span>
+            <ActivityIcon category="climbing" size="xs" />
             <span
               className={`text-[10px] font-medium ${VENUE_COLORS[entry.climbing.venue_type] ?? "text-slate-400"}`}
             >
@@ -206,8 +207,8 @@ export default function CalendarPage() {
           (compact ? (
             <div className="flex items-center gap-0.5">
               {entry.endurance.activities.slice(0, 3).map((a, i) => (
-                <span key={i} className="text-[10px]">
-                  {sportIcon(a.type)}
+                <span key={i}>
+                  <ActivityIcon category={sportCategory(a.type)} size="xs" />
                 </span>
               ))}
               {entry.endurance.activities.length > 3 && (
@@ -220,9 +221,7 @@ export default function CalendarPage() {
             <div className="space-y-px">
               {entry.endurance.activities.map((a, i) => (
                 <div key={i} className="flex items-center gap-1">
-                  <span className="text-[10px]">
-                    {sportIcon(a.type)}
-                  </span>
+                  <ActivityIcon category={sportCategory(a.type)} size="xs" />
                   <span className="text-[10px] text-slate-400">
                     {formatDuration(a.duration_s)}
                   </span>
@@ -292,7 +291,7 @@ export default function CalendarPage() {
 
               {entry?.climbing && (
                 <div className="mt-2 flex items-center gap-2">
-                  <span>{"\u{1F9D7}"}</span>
+                  <ActivityIcon category="climbing" size="sm" />
                   <span
                     className={`text-sm font-medium ${VENUE_COLORS[entry.climbing.venue_type] ?? ""}`}
                   >
@@ -318,7 +317,7 @@ export default function CalendarPage() {
                 <div className="mt-2 space-y-1">
                   {entry.endurance.activities.map((a, i) => (
                     <div key={i} className="flex items-center gap-2">
-                      <span>{sportIcon(a.type)}</span>
+                      <ActivityIcon category={sportCategory(a.type)} size="sm" />
                       <span className="text-sm text-slate-300">
                         {a.type}
                       </span>

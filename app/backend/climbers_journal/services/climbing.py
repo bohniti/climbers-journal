@@ -75,12 +75,149 @@ async def create_or_find_crag(
 
 
 async def list_crags(
-    session: AsyncSession, *, offset: int = 0, limit: int = 50
+    session: AsyncSession,
+    *,
+    search: str | None = None,
+    offset: int = 0,
+    limit: int = 50,
 ) -> list[Crag]:
+    stmt = select(Crag)
+    if search:
+        normalized = normalize_name(search)
+        stmt = stmt.where(Crag.name_normalized.contains(normalized))  # type: ignore[union-attr]
     result = await session.exec(
-        select(Crag).order_by(Crag.name).offset(offset).limit(limit)
+        stmt.order_by(Crag.name).offset(offset).limit(limit)
     )
     return list(result.all())
+
+
+async def get_crag(session: AsyncSession, crag_id: int) -> Crag | None:
+    return await session.get(Crag, crag_id)
+
+
+async def get_crag_stats(session: AsyncSession, crag_id: int) -> dict:
+    """Compute stats for a crag: session count, route count, hardest send, last visited."""
+    session_count_r = await session.exec(
+        select(func.count()).select_from(ClimbingSession).where(
+            ClimbingSession.crag_id == crag_id
+        )
+    )
+    session_count = session_count_r.one()
+
+    route_count_r = await session.exec(
+        select(func.count()).select_from(Route).where(Route.crag_id == crag_id)
+    )
+    route_count = route_count_r.one()
+
+    ascent_count_r = await session.exec(
+        select(func.count()).select_from(Ascent).where(Ascent.crag_id == crag_id)
+    )
+    ascent_count = ascent_count_r.one()
+
+    # Last visited date
+    last_visited_r = await session.exec(
+        select(func.max(ClimbingSession.date)).where(
+            ClimbingSession.crag_id == crag_id
+        )
+    )
+    last_visited = last_visited_r.one()
+
+    # Hardest send (exclude attempts/hangs)
+    send_types = [
+        TickType.onsight, TickType.flash, TickType.redpoint,
+        TickType.pinkpoint, TickType.repeat,
+    ]
+    hardest_r = await session.exec(
+        select(Ascent)
+        .where(
+            Ascent.crag_id == crag_id,
+            Ascent.tick_type.in_(send_types),  # type: ignore[union-attr]
+            Ascent.grade.isnot(None),  # type: ignore[union-attr]
+        )
+        .order_by(Ascent.grade.desc())  # type: ignore[union-attr]
+        .limit(1)
+    )
+    hardest_ascent = hardest_r.first()
+    hardest_send = None
+    if hardest_ascent:
+        hardest_send = {
+            "grade": hardest_ascent.grade,
+            "route_name": hardest_ascent.route_name,
+            "tick_type": hardest_ascent.tick_type.value,
+            "date": hardest_ascent.date.isoformat(),
+        }
+
+    return {
+        "session_count": session_count,
+        "route_count": route_count,
+        "ascent_count": ascent_count,
+        "last_visited": last_visited.isoformat() if last_visited else None,
+        "hardest_send": hardest_send,
+    }
+
+
+async def list_crags_with_stats(
+    session: AsyncSession,
+    *,
+    search: str | None = None,
+    sort: str = "last_visited",
+    offset: int = 0,
+    limit: int = 50,
+) -> list[dict]:
+    """List crags with session count and last visited date for the browser page."""
+    # Subquery for session count and last visited
+    session_stats = (
+        select(
+            ClimbingSession.crag_id,
+            func.count(ClimbingSession.id).label("session_count"),
+            func.max(ClimbingSession.date).label("last_visited"),
+        )
+        .group_by(ClimbingSession.crag_id)
+        .subquery()
+    )
+
+    stmt = (
+        select(
+            Crag,
+            func.coalesce(session_stats.c.session_count, 0).label("session_count"),
+            session_stats.c.last_visited,
+        )
+        .outerjoin(session_stats, Crag.id == session_stats.c.crag_id)
+    )
+
+    if search:
+        normalized = normalize_name(search)
+        stmt = stmt.where(Crag.name_normalized.contains(normalized))  # type: ignore[union-attr]
+
+    if sort == "name":
+        stmt = stmt.order_by(Crag.name)
+    elif sort == "session_count":
+        stmt = stmt.order_by(
+            func.coalesce(session_stats.c.session_count, 0).desc(),
+            Crag.name,
+        )
+    else:  # last_visited (default)
+        stmt = stmt.order_by(
+            func.coalesce(session_stats.c.last_visited, date(1970, 1, 1)).desc(),
+            Crag.name,
+        )
+
+    result = await session.execute(stmt.offset(offset).limit(limit))
+    rows = result.all()
+
+    return [
+        {
+            "id": crag.id,
+            "name": crag.name,
+            "country": crag.country,
+            "region": crag.region,
+            "venue_type": crag.venue_type.value,
+            "default_grade_sys": crag.default_grade_sys.value,
+            "session_count": sc,
+            "last_visited": lv.isoformat() if lv else None,
+        }
+        for crag, sc, lv in rows
+    ]
 
 
 # ── Area ───────────────────────────────────────────────────────────────
@@ -319,9 +456,19 @@ async def update_ascent(
     if ascent is None:
         raise HTTPException(status_code=404, detail="Ascent not found.")
 
+    # If route_id changes, denormalize route_name and optionally grade
+    if "route_id" in updates:
+        new_route_id = updates["route_id"]
+        if new_route_id is not None:
+            route = await session.get(Route, new_route_id)
+            if route is None:
+                raise HTTPException(status_code=404, detail="Route not found.")
+            updates["route_name"] = route.name
+            if "grade" not in updates:
+                updates["grade"] = route.grade
+
     for key, value in updates.items():
-        if value is not None:
-            setattr(ascent, key, value)
+        setattr(ascent, key, value)
 
     session.add(ascent)
     await session.flush()
@@ -518,6 +665,26 @@ async def get_climbing_session(
     return result.first()
 
 
+async def cascade_session_crag(
+    session: AsyncSession,
+    session_id: int,
+    new_crag_id: int,
+    new_crag_name: str,
+) -> int:
+    """Bulk update crag_id and crag_name on all ascents in a session.
+
+    Returns the number of ascents updated.
+    """
+    result = await session.execute(
+        text(
+            "UPDATE ascent SET crag_id = :crag_id, crag_name = :crag_name "
+            "WHERE session_id = :session_id"
+        ),
+        {"crag_id": new_crag_id, "crag_name": new_crag_name, "session_id": session_id},
+    )
+    return result.rowcount or 0
+
+
 # ── Bulk Session Create ────────────────────────────────────────────────
 
 
@@ -660,7 +827,7 @@ async def get_activity_feed(
             items.append({
                 "kind": "session",
                 "date": cs.date.isoformat(),
-                "data": _session_to_dict(cs),
+                "data": serialize_session(cs),
             })
 
     if feed_type in ("all", "endurance"):
@@ -700,7 +867,7 @@ async def get_activity_feed(
     return items[offset : offset + limit]
 
 
-def _session_to_dict(cs: ClimbingSession) -> dict:
+def serialize_session(cs: ClimbingSession) -> dict:
     """Serialize a ClimbingSession with nested ascents and linked activity."""
     linked = None
     if cs.linked_activity:

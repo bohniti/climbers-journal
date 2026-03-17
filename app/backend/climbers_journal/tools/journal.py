@@ -20,7 +20,7 @@ from climbers_journal.models.climbing import (
     normalize_name,
 )
 from climbers_journal.models.endurance import EnduranceActivity
-from climbers_journal.services.climbing import list_climbing_sessions, _session_to_dict
+from climbers_journal.services.climbing import list_climbing_sessions, serialize_session
 
 # Tick types that count as "sends"
 SEND_TICK_TYPES = {
@@ -507,7 +507,7 @@ async def _get_sessions(args: dict[str, Any], session: AsyncSession) -> str:
         limit=limit,
     )
 
-    items = [_session_to_dict(cs) for cs in sessions]
+    items = [serialize_session(cs) for cs in sessions]
     return json.dumps({"sessions": items, "count": len(items)}, default=str)
 
 
