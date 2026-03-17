@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { listCrags, type CragWithStatsResponse } from "@/lib/api";
+import { listCrags, createCrag, type CragWithStatsResponse } from "@/lib/api";
 
 interface CragComboboxProps {
   value: number | null;
@@ -18,6 +18,7 @@ export default function CragCombobox({
   const [crags, setCrags] = useState<CragWithStatsResponse[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [creating, setCreating] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Load crags on mount and when query changes
@@ -57,6 +58,21 @@ export default function CragCombobox({
 
   const filtered = crags.filter((c) => excludeId == null || c.id !== excludeId);
 
+  const handleCreateCrag = async () => {
+    if (!query.trim()) return;
+    setCreating(true);
+    try {
+      const result = await createCrag({ name: query.trim() });
+      onChange(result.id, result.name);
+      setQuery(result.name);
+      setOpen(false);
+    } catch {
+      // silently fail
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div ref={wrapperRef} className="relative">
       <input
@@ -74,11 +90,6 @@ export default function CragCombobox({
         <div className="absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-slate-700 bg-slate-800 shadow-lg">
           {loading && filtered.length === 0 && (
             <div className="px-3 py-2 text-xs text-slate-500">Loading...</div>
-          )}
-          {!loading && filtered.length === 0 && (
-            <div className="px-3 py-2 text-xs text-slate-500">
-              No crags found
-            </div>
           )}
           {filtered.map((crag) => (
             <button
@@ -103,6 +114,22 @@ export default function CragCombobox({
               )}
             </button>
           ))}
+          {/* Create new crag option */}
+          {!loading && query.trim().length > 0 && (
+            <button
+              type="button"
+              onClick={handleCreateCrag}
+              disabled={creating}
+              className="w-full border-t border-slate-700 px-3 py-2 text-left text-sm text-emerald-400 hover:bg-slate-700"
+            >
+              {creating ? "Creating..." : `+ Create "${query.trim()}"`}
+            </button>
+          )}
+          {!loading && filtered.length === 0 && !query.trim() && (
+            <div className="px-3 py-2 text-xs text-slate-500">
+              Type to search or create a crag
+            </div>
+          )}
         </div>
       )}
     </div>

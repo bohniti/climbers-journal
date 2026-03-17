@@ -221,6 +221,33 @@ export interface CragSessionResponse {
   ascent_count: number;
 }
 
+export interface CragCreateRequest {
+  name: string;
+  country?: string | null;
+  region?: string | null;
+  venue_type?: string;
+  default_grade_sys?: string | null;
+}
+
+export interface CragCreateResponse extends CragResponse {
+  created: boolean;
+}
+
+export async function createCrag(
+  data: CragCreateRequest
+): Promise<CragCreateResponse> {
+  const res = await fetch(`${API_BASE}/crags`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to create crag (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
 export async function listCrags(
   opts: { search?: string; sort?: string; offset?: number; limit?: number } = {}
 ): Promise<CragWithStatsResponse[]> {
