@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { listCrags, type CragWithStatsResponse } from "@/lib/api";
+import { VenueIcon } from "@/components/ActivityIcon";
 
 type SortOption = "last_visited" | "name" | "session_count";
 
@@ -128,7 +129,6 @@ export default function CragsPage() {
 }
 
 function CragRow({ crag }: { crag: CragWithStatsResponse }) {
-  const venueIcon = crag.venue_type === "indoor_gym" ? "\uD83C\uDFE2" : "\u26F0\uFE0F";
   const venueLabel = crag.venue_type === "indoor_gym" ? "Gym" : "Outdoor";
 
   const relativeDate = crag.last_visited
@@ -141,8 +141,8 @@ function CragRow({ crag }: { crag: CragWithStatsResponse }) {
       className="block rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 transition-colors hover:border-slate-600"
     >
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-lg">
-          {venueIcon}
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-800">
+          <VenueIcon venueType={crag.venue_type} size="md" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">

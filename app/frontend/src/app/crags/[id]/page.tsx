@@ -18,6 +18,7 @@ import {
   formatDuration,
   formatDate,
 } from "@/lib/constants";
+import ActivityIcon from "@/components/ActivityIcon";
 
 const PAGE_SIZE = 20;
 
@@ -241,8 +242,8 @@ function SessionCard({ session }: { session: CragSessionResponse }) {
     <div className="rounded-xl border border-slate-700 bg-slate-900 text-left transition-colors hover:border-slate-600">
       <button type="button" onClick={cycleExpand} className="w-full px-4 py-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-900/30 text-lg">
-            {"\u{1F9D7}"}
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-900/30">
+            <ActivityIcon category="climbing" size="md" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">

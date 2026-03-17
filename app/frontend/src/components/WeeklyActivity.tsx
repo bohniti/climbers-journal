@@ -15,10 +15,10 @@ import {
   TICK_COLORS,
   tickTypeLabel,
   formatDuration,
-  sportIcon,
   sportCategory,
   type SportCategory,
 } from "@/lib/constants";
+import ActivityIcon from "@/components/ActivityIcon";
 
 // ── Week Navigator ──────────────────────────────────────────────────
 
@@ -104,7 +104,7 @@ function DayAccordion({ day }: { day: WeeklyDayEntry }) {
         <div className="space-y-1 border-t border-slate-800 px-3 py-2">
           {day.ascents.map((a, i) => (
             <div key={`a-${i}`} className="flex items-center gap-2 text-xs">
-              <span className="text-sm">🧗</span>
+              <ActivityIcon category="climbing" size="sm" />
               <span className="text-slate-200">
                 {a.route_name ?? "Unnamed"}
               </span>
@@ -122,9 +122,7 @@ function DayAccordion({ day }: { day: WeeklyDayEntry }) {
           ))}
           {day.endurance_activities.map((e, i) => (
             <div key={`e-${i}`} className="flex items-center gap-2 text-xs">
-              <span className="text-sm">
-                {sportIcon(e.type)}
-              </span>
+              <ActivityIcon category={sportCategory(e.type)} size="sm" />
               <span className="text-slate-200">{e.name ?? e.type}</span>
               <span className="text-slate-400">
                 {formatDuration(e.duration_s)}
@@ -251,7 +249,7 @@ export default function WeeklyActivity() {
       {/* Session streak */}
       {data && data.session_streak > 0 && (
         <div className="mb-3 text-xs text-slate-400">
-          🔥 {data.session_streak} climbing session
+          <span className="text-orange-400 font-semibold">&#x25CF;</span> {data.session_streak} climbing session
           {data.session_streak !== 1 ? "s" : ""} this month
         </div>
       )}
