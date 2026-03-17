@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { listCrags, type CragWithStatsResponse } from "@/lib/api";
-import { formatDate } from "@/lib/constants";
 
 type SortOption = "last_visited" | "name" | "session_count";
 
