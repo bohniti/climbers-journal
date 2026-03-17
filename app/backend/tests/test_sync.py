@@ -13,6 +13,7 @@ from climbers_journal.services.sync import (
     _parse_activity,
     list_activities,
     sync_activities,
+    update_activity,
     upsert_activity,
 )
 
@@ -182,6 +183,37 @@ class TestListActivities:
 
         # Date desc ordering: first page should have later dates
         assert page1[0].date > page2[0].date
+
+
+class TestUpdateActivity:
+    @pytest.mark.asyncio
+    async def test_update_name(self, session):
+        data = _make_activity_data()
+        await upsert_activity(session, data)
+        await session.flush()
+
+        result = await session.exec(select(EnduranceActivity))
+        activity = result.one()
+
+        updated = await update_activity(session, activity.id, {"name": "Renamed Run"})
+        assert updated.name == "Renamed Run"
+
+    @pytest.mark.asyncio
+    async def test_update_name_to_null(self, session):
+        data = _make_activity_data()
+        await upsert_activity(session, data)
+        await session.flush()
+
+        result = await session.exec(select(EnduranceActivity))
+        activity = result.one()
+
+        updated = await update_activity(session, activity.id, {"name": None})
+        assert updated.name is None
+
+    @pytest.mark.asyncio
+    async def test_update_not_found(self, session):
+        with pytest.raises(ValueError, match="not found"):
+            await update_activity(session, 99999, {"name": "Nope"})
 
 
 class TestSyncActivities:
