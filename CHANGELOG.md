@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.15.5.0] - 2026-03-17
+
+### Added
+- `PUT /sessions/climbing/{id}` endpoint for editing climbing sessions (crag change with cascade, notes)
+- `PUT /ascents/{id}` expanded with `route_id` and `grade` fields, with route name denormalization
+- `SessionEditModal` component with searchable crag combobox and crag change confirmation dialog
+- `AscentEditModal` component for editing grade, tick type, tries, rating, notes, and partner
+- `CragCombobox` reusable searchable dropdown component
+- Edit buttons (pencil icon) on session cards and ascent rows in the activity log
+- `updateSession()` and `updateAscent()` API client functions
+
+### Changed
+- Consolidated session serialization into single `serialize_session()` in climbing service (was duplicated in router and service)
+- `update_ascent()` now uses `exclude_unset=True` to support clearing fields (setting to null)
+- Session crag updates cascade to all ascents via bulk SQL update (single query, not N+1)
+- `IntegrityError` on session crag update returns 409 with clear message
+
 ## [0.15.4.0] - 2026-03-17
 
 ### Added
