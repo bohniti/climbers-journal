@@ -277,6 +277,49 @@ class CragStatsResponse(BaseModel):
     hardest_send: dict | None
 
 
+class CragCreateRequest(BaseModel):
+    name: str
+    country: str | None = None
+    region: str | None = None
+    venue_type: VenueType = VenueType.outdoor_crag
+    default_grade_sys: GradeSystem | None = None
+
+
+class CragCreateResponse(BaseModel):
+    id: int
+    name: str
+    country: str | None
+    region: str | None
+    venue_type: VenueType
+    default_grade_sys: GradeSystem
+    created: bool
+
+
+@router.post("/crags", response_model=CragCreateResponse)
+async def create_crag(
+    body: CragCreateRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    crag, created = await svc.create_or_find_crag(
+        session,
+        name=body.name,
+        country=body.country,
+        region=body.region,
+        venue_type=body.venue_type,
+        default_grade_sys=body.default_grade_sys,
+    )
+    await session.commit()
+    return {
+        "id": crag.id,
+        "name": crag.name,
+        "country": crag.country,
+        "region": crag.region,
+        "venue_type": crag.venue_type,
+        "default_grade_sys": crag.default_grade_sys,
+        "created": created,
+    }
+
+
 @router.get("/crags", response_model=list[CragWithStatsResponse])
 async def list_crags(
     search: str | None = None,

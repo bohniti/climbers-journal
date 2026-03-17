@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.15.6.0] - 2026-03-17
+
+### Added
+- Edit buttons and modals on crag detail page (session cards and ascent rows)
+- `POST /crags` endpoint for standalone crag creation
+- "Create new crag" option in crag search combobox when no matches found
+- `createCrag()` API client function
+
 ## [0.15.5.0] - 2026-03-17
 
 ### Added
