@@ -198,7 +198,7 @@ async def list_crags_with_stats(
         )
     else:  # last_visited (default)
         stmt = stmt.order_by(
-            func.coalesce(session_stats.c.last_visited, "1970-01-01").desc(),
+            func.coalesce(session_stats.c.last_visited, date(1970, 1, 1)).desc(),
             Crag.name,
         )
 

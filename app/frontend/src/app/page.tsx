@@ -365,7 +365,10 @@ function RecentSessionRow({ session }: { session: FeedSessionData }) {
   const hardest = grades.length > 0 ? grades[grades.length - 1] : null;
 
   return (
-    <div className="flex items-center gap-3 rounded-lg px-2 py-1.5">
+    <Link
+      href={`/crags/${session.crag_id}`}
+      className="flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-slate-800/50"
+    >
       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-red-900/30 text-sm">
         {"\u{1F9D7}"}
       </div>
@@ -390,7 +393,7 @@ function RecentSessionRow({ session }: { session: FeedSessionData }) {
           )}
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
