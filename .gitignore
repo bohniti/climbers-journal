@@ -29,3 +29,6 @@ frontend/.env.local
 # Certs
 nginx/certs/
 .gstack/
+.claude/skills/
+.claude/settings.json
+.claude/projects/
