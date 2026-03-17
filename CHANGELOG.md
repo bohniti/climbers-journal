@@ -2,25 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.15.1.0] - 2026-03-16
+## [0.15.2.0] - 2026-03-17
 
 ### Added
-- Strava-aligned sport type taxonomy (`SPORT_TYPES`) covering all ~50 Strava SportTypes with icons, labels, and categories
-- Climbing sub-type icons (`CLIMBING_STYLE_ICONS`) for sport, boulder, multi-pitch, trad, alpine
-- `CATEGORY_COLORS` for 8 sport categories (run, ride, swim, winter, climbing, water, fitness, other) replacing old ad-hoc color map
-- Helper functions: `getSportType()`, `sportIcon()`, `sportCategory()` with console.warn fallback for unknown types
-- Activities overhaul plan (0003) for session grouping, unified feed, and crag browser
+- ClimbingSession model grouping ascents by (date, crag) with unique constraint
+- Alembic migrations for `climbing_session` table and backfill from existing ascents
+- Session CRUD API: `GET /sessions/climbing`, `GET /sessions/climbing/{id}`
+- Unified activity feed endpoint (`GET /stats/feed`) merging sessions and endurance activities
+- Data health endpoint (`GET /stats/health`) for migration verification
+- `get_sessions` copilot tool for session-grouped queries
+- Auto-link RockClimbing endurance activities to climbing sessions on sync
+- Race condition guard (IntegrityError catch) on session creation
+- Name propagation helper for crag renames
+- Strava-aligned sport type taxonomy with icons, categories, and chart colors
+- Frontend feed-based log page replacing separate ascent/activity queries
 
 ### Changed
-- Weekly activity chart now uses Strava sport categories instead of ad-hoc type mapping
+- Weekly activity chart uses Strava sport categories instead of ad-hoc type mapping
 - All activity icons across dashboard, log, and calendar pages use new taxonomy
-- Replaced `mapEnduranceType()` with proper `sportCategory()` lookup
-- Chart legend and tooltip display category labels from `CATEGORY_COLORS`
+- LLM system prompt updated with session-aware tool guidance
+- Configurable LLM provider documented (Gemini default, Kimi K2.5 alternative)
 
 ### Removed
-- `ACTIVITY_ICONS` constant (replaced by `SPORT_TYPES`)
-- `activityIcon()` helper (replaced by `sportIcon()`)
-- `mapEnduranceType()` helper in WeeklyActivity (replaced by `sportCategory()`)
+- `ACTIVITY_ICONS` and `ACTIVITY_TYPE_COLORS` constants (replaced by `SPORT_TYPES` and `CATEGORY_COLORS`)
+- `activityIcon()` and `mapEnduranceType()` helpers (replaced by `sportIcon()` and `sportCategory()`)
 
 ## [0.15.0.0] - 2026-03-16
 
