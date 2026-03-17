@@ -106,16 +106,6 @@ export const SPORT_TYPES: Record<string, SportTypeInfo> = {
   Wheelchair:       { icon: "default.png", label: "Wheelchair", category: "other" },
 };
 
-// ── Climbing sub-type icons ─────────────────────────────────────────
-
-export const CLIMBING_STYLE_ICONS: Record<string, string> = {
-  sport:      "climber.png",
-  boulder:    "climber.png",
-  multi_pitch:"climber.png",
-  trad:       "climber.png",
-  alpine:     "climber.png",
-};
-
 // ── Category chart colors (hex for Recharts + badge) ────────────────
 
 export const CATEGORY_COLORS: Record<SportCategory, { hex: string; badge: string; label: string }> = {
@@ -151,11 +141,6 @@ export function getSportType(type: string): SportTypeInfo {
     console.warn(`Unknown sport type: "${type}", falling back to Workout`);
   }
   return { icon: "default.png", label: type, category: "fitness" };
-}
-
-/** Get the icon for a sport type */
-export function sportIcon(type: string): string {
-  return getSportType(type).icon;
 }
 
 /** Map a sport type string to its category */
