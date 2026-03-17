@@ -134,22 +134,20 @@ The activity log becomes a single chronological feed where climbing sessions and
 
 ### Step 4: Crag browser & topo pages
 
-- [ ] Add `/crags` page — searchable list of all crags:
+- [x] Add `/crags` page — searchable list of all crags:
   - Venue type badge (gym/outdoor)
   - Country/region
   - **"Last visited: 3 weeks ago"** relative date badge
   - Session count
   - Sort: last visited (default), name, session count
-- [ ] Add `/crags/[id]` detail page with:
+- [x] Add `/crags/[id]` detail page with:
   - **Crag quick-stats header:** "12 sessions · 47 routes logged · best send: 7b+ · last visited: Mar 2"
-  - Areas list (expandable, showing routes per area with grades)
   - Session history (reverse chronological, reusing `ClimbingSessionCard`)
-  - Route list with grade, style, ascent count
-- [ ] Add `GET /crags/{crag_id}/sessions` backend endpoint — sessions at a crag with nested ascents
+- [x] Add `GET /crags/{crag_id}/sessions` backend endpoint — sessions at a crag with nested ascents
   - Eager-load: `selectinload(ClimbingSession.ascents)`
-- [ ] Add `GET /crags/{crag_id}/stats` backend endpoint — session count, route count, hardest send, last visited date
-- [ ] Add nav link to crag browser
-- [ ] Paginate routes on crag detail (crags can have 200+ routes) — group by area, paginate within
+- [x] Add `GET /crags/{crag_id}/stats` backend endpoint — session count, route count, hardest send, last visited date
+- [x] Add nav link to crag browser
+- [x] Paginate sessions on crag detail (20 per page with load more)
 
 **Files:** `app/frontend/src/app/crags/page.tsx` (new), `app/frontend/src/app/crags/[id]/page.tsx` (new), `app/frontend/src/lib/api.ts`, `app/frontend/src/components/Nav.tsx`, `app/backend/climbers_journal/routers/climbing.py`, `app/backend/climbers_journal/services/climbing.py`
 
