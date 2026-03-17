@@ -6,13 +6,6 @@ Deferred work from plan reviews. Each item has context so it can be picked up in
 
 ## P2 — Should Do
 
-### Make session_id NOT NULL
-**What:** Follow-up migration to add NOT NULL constraint on `ascent.session_id` after verifying all ascents have been backfilled.
-**Why:** Nullable FK is a migration compromise. Once verified, making it NOT NULL prevents orphan ascents from being created.
-**Effort:** S
-**Depends on:** Plan 0003 fully implemented + migration verified via `/stats/health` showing 0 orphans
-**Context:** From eng review of plan 0003. The backfill migration groups existing ascents by (date, crag_id). After running and verifying, a follow-up Alembic migration adds the NOT NULL constraint.
-
 ### Docker Compose + CI/CD + Deployment
 **What:** Dockerfiles for backend + frontend, docker-compose.yml (dev + prod), GitHub Actions pipeline, Hostinger VPS deployment.
 **Why:** No deployment infrastructure exists yet. Currently running locally only.
@@ -27,11 +20,32 @@ Deferred work from plan reviews. Each item has context so it can be picked up in
 **Depends on:** DB layer (PROJ-2) + climbing model (PROJ-3)
 **Context:** User has previously created blog articles from climbing CSV data. Export closes the loop — import CSV in, do stuff, export CSV out.
 
+### Training Insights Endpoint
+**What:** `GET /stats/insights` — compute period-over-period deltas, return 2-3 text insights for dashboard (e.g., "Your climbing volume is up 30% vs last month").
+**Why:** Transforms dashboard from passive stats display to active training coach. High impact for low effort.
+**Effort:** S-M
+**Depends on:** Activity stats + climbing progress endpoints from plan 0004
+**Context:** From CEO review of plan 0004. Builds on the stats endpoints being created. Natural follow-up once dashboard data is flowing.
+
+### Period Comparison Toggle
+**What:** "vs last month" toggle on weekly activity chart — overlays previous period's data as faded ghost bars behind current data.
+**Why:** Lets users instantly see if they're training more or less than before.
+**Effort:** S (frontend only, fetch two periods, overlay in Recharts)
+**Depends on:** Weekly chart filter buttons from plan 0004 Step 3
+**Context:** From CEO review of plan 0004. Deferred to avoid over-complicating the chart in v1.
+
 ## P3 — Nice to Have
 
-### Photo Attachments on Ascents
-**What:** Attach beta photos or summit pics to ascent records.
-**Why:** Visual memory of climbs. Common feature in Mountain Project / The Crag.
-**Effort:** M
-**Depends on:** Ascent model (PROJ-3)
-**Context:** Store on local disk (`media/` folder). Migrate to object storage only if scaling to multi-user or CDN is needed. Hostinger VPS has sufficient disk for single-user.
+### Training Consistency Heatmap
+**What:** GitHub-style contribution graph on dashboard — 90-day grid, one cell per day, colored by activity type.
+**Why:** Instant visual motivation — users can see training streaks and gaps at a glance.
+**Effort:** S (frontend only, uses existing activity data from quarterly endpoint)
+**Depends on:** Dashboard component extraction from plan 0004
+**Context:** From CEO review of plan 0004. Pure delight feature, no backend work needed.
+
+### Micro-Animations on Dashboard
+**What:** Chart bars animate on load (Recharts `isAnimationActive`), stats numbers count up, smooth fade transitions between dashboard sections.
+**Why:** Makes the dashboard feel premium and polished. Zero new dependencies — Recharts + Tailwind `animate-` classes.
+**Effort:** S (~20 min)
+**Depends on:** Dashboard overhaul from plan 0004
+**Context:** From CEO review of plan 0004. Pure polish, best done after dashboard is feature-complete.

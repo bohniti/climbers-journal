@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.15.4.0] - 2026-03-17
+
+### Added
+- PNG icon system replacing all emoji icons across the app
+- `ActivityIcon` component with category-based PNG mapping (climber, runner, cycling, skiing, gym, default)
+- `VenueIcon` component for crag/gym venue display (home.png, gym.png)
+- 8 custom PNG icons in `public/icons/`
+
+### Changed
+- `SPORT_TYPES` icon field now stores PNG filenames instead of emoji strings
+- All UI components (dashboard, log, calendar, crags) use `ActivityIcon` instead of emoji rendering
+- Session streak indicator uses styled dot instead of fire emoji
+
+### Removed
+- `sportIcon()` helper function (replaced by `ActivityIcon` component)
+- `CLIMBING_STYLE_ICONS` constant (unused after icon migration)
+
 ## [0.15.3.0] - 2026-03-17
 
 ### Added
