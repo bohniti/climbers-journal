@@ -129,18 +129,6 @@ export const CATEGORY_COLORS: Record<SportCategory, { hex: string; badge: string
   other:    { hex: "#9ca3af", badge: "bg-slate-800 text-slate-400", label: "Other" },
 };
 
-// ── Legacy aliases (kept for backward compat during migration) ──────
-
-export const ACTIVITY_TYPE_COLORS: Record<string, { hex: string; badge: string }> = {
-  bouldering:  { hex: "#9333ea", badge: "bg-purple-900/40 text-purple-300" },
-  sport_climb: { hex: "#3b82f6", badge: "bg-blue-900/40 text-blue-300" },
-  multi_pitch: { hex: "#f59e0b", badge: "bg-amber-900/40 text-amber-300" },
-  cycling:     { hex: "#22c55e", badge: "bg-green-900/40 text-green-300" },
-  hiking:      { hex: "#14b8a6", badge: "bg-teal-900/40 text-teal-300" },
-  fitness:     { hex: "#f97316", badge: "bg-orange-900/40 text-orange-300" },
-  other:       { hex: "#9ca3af", badge: "bg-slate-800 text-slate-400" },
-};
-
 // ── Venue colors (dark-only) ────────────────────────────────────────
 
 export const VENUE_COLORS: Record<string, string> = {

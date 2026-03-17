@@ -5,8 +5,12 @@ import Link from "next/link";
 import {
   fetchDashboard,
   fetchGradePyramid,
+  fetchFeed,
   type DashboardData,
   type GradePyramidEntry,
+  type FeedItem,
+  type FeedSessionData,
+  type ActivityResponse,
 } from "@/lib/api";
 import {
   TICK_COLORS,
@@ -14,6 +18,7 @@ import {
   tickTypeLabel,
   formatDuration,
   formatDate,
+  formatDistance,
   sportIcon,
 } from "@/lib/constants";
 import WeeklyActivity from "@/components/WeeklyActivity";
@@ -29,6 +34,7 @@ export default function DashboardPage() {
   const [venueFilter, setVenueFilter] = useState<string>("");
   const [periodFilter, setPeriodFilter] = useState<string>("");
   const [pyramid, setPyramid] = useState<GradePyramidEntry[]>([]);
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
 
   const { showTour, startTour, closeTour } = useOnboardingTour();
 
@@ -46,9 +52,13 @@ export default function DashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const d = await fetchDashboard();
+      const [d, feed] = await Promise.all([
+        fetchDashboard(),
+        fetchFeed({ limit: 10 }),
+      ]);
       setData(d);
       setPyramid(d.grade_pyramid);
+      setFeedItems(feed);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load dashboard");
     } finally {
@@ -308,7 +318,7 @@ export default function DashboardPage() {
         <div className="rounded-xl border border-slate-700 bg-slate-900 p-4">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400">
-              Last 7 days
+              Recent activity
             </h3>
             <Link
               href="/log"
@@ -318,77 +328,24 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          {data.recent_climbing.length === 0 &&
-          data.recent_endurance.length === 0 ? (
+          {feedItems.length === 0 ? (
             <div className="py-6 text-center text-sm text-slate-500">
-              No activity this week
+              No activity yet
             </div>
           ) : (
             <div className="space-y-1.5">
-              {mergeRecent(data.recent_climbing, data.recent_endurance).map(
-                (item) =>
-                  item.kind === "climbing" ? (
-                    <div
-                      key={`c-${item.data.id}`}
-                      className="flex items-center gap-3 rounded-lg px-2 py-1.5"
-                    >
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-red-900/30 text-sm">
-                        {"\u{1F9D7}"}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="truncate text-sm text-slate-100">
-                            {item.data.route_name ?? "Unnamed"}
-                          </span>
-                          {item.data.grade && (
-                            <span className="shrink-0 font-mono text-xs text-slate-400">
-                              {item.data.grade}
-                            </span>
-                          )}
-                          <span
-                            className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                              TICK_COLORS[item.data.tick_type] ??
-                              TICK_COLORS.attempt
-                            }`}
-                          >
-                            {tickTypeLabel(item.data.tick_type)}
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-slate-400">
-                          {item.data.crag_name} &middot;{" "}
-                          {formatDate(item.data.date)}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div
-                      key={`e-${item.data.id}`}
-                      className="flex items-center gap-3 rounded-lg px-2 py-1.5"
-                    >
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-blue-900/30 text-sm">
-                        {sportIcon(item.data.type)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="truncate text-sm text-slate-100">
-                            {item.data.name ?? item.data.type}
-                          </span>
-                          <span className="shrink-0 text-xs text-slate-400">
-                            {formatDuration(item.data.duration_s)}
-                          </span>
-                          {item.data.distance_m != null &&
-                            item.data.distance_m > 0 && (
-                              <span className="shrink-0 text-xs text-slate-400">
-                                {(item.data.distance_m / 1000).toFixed(1)} km
-                              </span>
-                            )}
-                        </div>
-                        <div className="text-[11px] text-slate-400">
-                          {item.data.type} &middot; {formatDate(item.data.date)}
-                        </div>
-                      </div>
-                    </div>
-                  )
+              {feedItems.map((item) =>
+                item.kind === "session" ? (
+                  <RecentSessionRow
+                    key={`s-${item.data.id}`}
+                    session={item.data as FeedSessionData}
+                  />
+                ) : (
+                  <RecentEnduranceRow
+                    key={`e-${item.data.id}`}
+                    activity={item.data as ActivityResponse}
+                  />
+                )
               )}
             </div>
           )}
@@ -398,34 +355,69 @@ export default function DashboardPage() {
   );
 }
 
-// ── Merge recent items by date ───────────────────────────────────────
+// ── Dashboard recent activity rows ──────────────────────────────────
 
-type MergedItem =
-  | {
-      kind: "climbing";
-      date: string;
-      data: DashboardData["recent_climbing"][number];
-    }
-  | {
-      kind: "endurance";
-      date: string;
-      data: DashboardData["recent_endurance"][number];
-    };
+function RecentSessionRow({ session }: { session: FeedSessionData }) {
+  const grades = session.ascents
+    .map((a) => a.grade)
+    .filter((g): g is string => g != null)
+    .sort();
+  const hardest = grades.length > 0 ? grades[grades.length - 1] : null;
 
-function mergeRecent(
-  climbing: DashboardData["recent_climbing"],
-  endurance: DashboardData["recent_endurance"]
-): MergedItem[] {
-  const items: MergedItem[] = [
-    ...climbing.map(
-      (c) => ({ kind: "climbing" as const, date: c.date, data: c })
-    ),
-    ...endurance.map(
-      (e) => ({ kind: "endurance" as const, date: e.date, data: e })
-    ),
-  ];
-  items.sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  return (
+    <div className="flex items-center gap-3 rounded-lg px-2 py-1.5">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-red-900/30 text-sm">
+        {"\u{1F9D7}"}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          <span className="truncate text-sm text-slate-100">
+            {session.crag_name ?? "Unknown crag"}
+          </span>
+          <span className="shrink-0 text-xs text-slate-400">
+            {session.ascent_count} route{session.ascent_count !== 1 ? "s" : ""}
+          </span>
+          {hardest && (
+            <span className="shrink-0 font-mono text-xs text-slate-400">
+              {hardest}
+            </span>
+          )}
+        </div>
+        <div className="text-[11px] text-slate-400">
+          {formatDate(session.date)}
+          {session.linked_activity && (
+            <> &middot; {formatDuration(session.linked_activity.duration_s)}</>
+          )}
+        </div>
+      </div>
+    </div>
   );
-  return items;
+}
+
+function RecentEnduranceRow({ activity }: { activity: ActivityResponse }) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg px-2 py-1.5">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-blue-900/30 text-sm">
+        {sportIcon(activity.type)}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          <span className="truncate text-sm text-slate-100">
+            {activity.name ?? activity.type}
+          </span>
+          <span className="shrink-0 text-xs text-slate-400">
+            {formatDuration(activity.duration_s)}
+          </span>
+          {activity.distance_m != null && activity.distance_m > 0 && (
+            <span className="shrink-0 text-xs text-slate-400">
+              {formatDistance(activity.distance_m)}
+            </span>
+          )}
+        </div>
+        <div className="text-[11px] text-slate-400">
+          {activity.type} &middot; {formatDate(activity.date)}
+        </div>
+      </div>
+    </div>
+  );
 }

@@ -406,6 +406,66 @@ export async function fetchWeekly(weekStart?: string): Promise<WeeklyData> {
   return res.json();
 }
 
+// ── Unified Feed ─────────────────────────────────────────────────────
+
+export interface FeedSessionAscent {
+  id: number;
+  date: string;
+  route_name: string | null;
+  grade: string | null;
+  tick_type: string;
+  tries: number | null;
+  rating: number | null;
+  notes: string | null;
+  partner: string | null;
+  route_id: number | null;
+  crag_id: number;
+}
+
+export interface FeedLinkedActivity {
+  id: number;
+  duration_s: number;
+  avg_hr: number | null;
+  max_hr: number | null;
+}
+
+export interface FeedSessionData {
+  id: number;
+  date: string;
+  crag_id: number;
+  crag_name: string | null;
+  notes: string | null;
+  linked_activity: FeedLinkedActivity | null;
+  ascents: FeedSessionAscent[];
+  ascent_count: number;
+}
+
+export type FeedItem =
+  | { kind: "session"; date: string; data: FeedSessionData }
+  | { kind: "endurance"; date: string; data: ActivityResponse };
+
+export interface FeedFilters {
+  type?: "all" | "climbing" | "endurance";
+  offset?: number;
+  limit?: number;
+}
+
+export async function fetchFeed(
+  filters: FeedFilters = {}
+): Promise<FeedItem[]> {
+  const params = new URLSearchParams();
+  if (filters.type) params.set("type", filters.type);
+  if (filters.offset != null) params.set("offset", String(filters.offset));
+  if (filters.limit != null) params.set("limit", String(filters.limit));
+
+  const res = await fetch(`${API_BASE}/stats/feed?${params}`);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to fetch feed (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
 // ── Activities (Endurance) ────────────────────────────────────────────
 
 export interface ActivityResponse {
