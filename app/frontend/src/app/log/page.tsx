@@ -271,9 +271,13 @@ function ClimbingSessionCard({ session }: { session: FeedSessionData }) {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="truncate text-sm font-medium text-slate-100">
+              <Link
+                href={`/crags/${session.crag_id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="truncate text-sm font-medium text-slate-100 hover:text-emerald-400"
+              >
                 {session.crag_name ?? "Unknown crag"}
-              </span>
+              </Link>
               {linkedDuration != null && (
                 <span className="shrink-0 rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">
                   {formatDuration(linkedDuration)}

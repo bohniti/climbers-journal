@@ -20,3 +20,4 @@
 | PROJ-15 | User onboarding tutorial | done | [0002](../plans/0002-polish-onboarding.md) |
 | PROJ-16 | Strava-aligned sport type taxonomy | done | [0003](../plans/0003-activities-overhaul.md) |
 | PROJ-17 | ClimbingSession model & API | done | [0003](../plans/0003-activities-overhaul.md) |
+| PROJ-18 | Crag browser & detail pages | done | [0003](../plans/0003-activities-overhaul.md) |

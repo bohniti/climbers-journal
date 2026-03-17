@@ -229,13 +229,74 @@ def _serialize_session(cs) -> dict:
 # ── Crags ──────────────────────────────────────────────────────────────
 
 
-@router.get("/crags", response_model=list[CragResponse])
+class CragWithStatsResponse(BaseModel):
+    id: int
+    name: str
+    country: str | None
+    region: str | None
+    venue_type: VenueType
+    default_grade_sys: GradeSystem
+    session_count: int
+    last_visited: datetime.date | None
+
+
+class CragStatsResponse(BaseModel):
+    session_count: int
+    route_count: int
+    ascent_count: int
+    last_visited: datetime.date | None
+    hardest_send: dict | None
+
+
+@router.get("/crags", response_model=list[CragWithStatsResponse])
 async def list_crags(
+    search: str | None = None,
+    sort: str = Query("last_visited", pattern="^(last_visited|name|session_count)$"),
     offset: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     session: AsyncSession = Depends(get_session),
 ):
-    return await svc.list_crags(session, offset=offset, limit=limit)
+    return await svc.list_crags_with_stats(
+        session, search=search, sort=sort, offset=offset, limit=limit
+    )
+
+
+@router.get("/crags/{crag_id}", response_model=CragResponse)
+async def get_crag(
+    crag_id: int,
+    session: AsyncSession = Depends(get_session),
+):
+    crag = await svc.get_crag(session, crag_id)
+    if crag is None:
+        raise HTTPException(status_code=404, detail="Crag not found.")
+    return crag
+
+
+@router.get("/crags/{crag_id}/stats", response_model=CragStatsResponse)
+async def get_crag_stats(
+    crag_id: int,
+    session: AsyncSession = Depends(get_session),
+):
+    crag = await svc.get_crag(session, crag_id)
+    if crag is None:
+        raise HTTPException(status_code=404, detail="Crag not found.")
+    return await svc.get_crag_stats(session, crag_id)
+
+
+@router.get("/crags/{crag_id}/sessions", response_model=list[SessionDetailResponse])
+async def list_crag_sessions(
+    crag_id: int,
+    offset: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    session: AsyncSession = Depends(get_session),
+):
+    crag = await svc.get_crag(session, crag_id)
+    if crag is None:
+        raise HTTPException(status_code=404, detail="Crag not found.")
+    sessions = await svc.list_climbing_sessions(
+        session, crag_id=crag_id, offset=offset, limit=limit
+    )
+    return [_serialize_session(cs) for cs in sessions]
 
 
 # ── Areas ──────────────────────────────────────────────────────────────
