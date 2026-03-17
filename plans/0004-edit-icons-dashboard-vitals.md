@@ -103,19 +103,19 @@ Replace all emoji icons with PNG images. Create a shared `<ActivityIcon>` compon
 Build edit modals for climbing sessions and ascents. Expand backend edit surface.
 
 **Pre-step fixes (from eng review):**
-- [ ] **Consolidate session serialization** — delete `_serialize_session()` from `climbing.py` router, use `serialize_session()` (renamed from `_session_to_dict`) in the service for all callers. Eliminates DRY violation before adding more call sites.
-- [ ] **Fix `update_ascent()` to support clearing fields** — change `body.model_dump(exclude_none=True)` to `body.model_dump(exclude_unset=True)` in the router. Remove `if value is not None` guard in the service. This allows setting fields to `null` (e.g., clearing notes).
+- [x] **Consolidate session serialization** — delete `_serialize_session()` from `climbing.py` router, use `serialize_session()` (renamed from `_session_to_dict`) in the service for all callers. Eliminates DRY violation before adding more call sites.
+- [x] **Fix `update_ascent()` to support clearing fields** — change `body.model_dump(exclude_none=True)` to `body.model_dump(exclude_unset=True)` in the router. Remove `if value is not None` guard in the service. This allows setting fields to `null` (e.g., clearing notes).
 
-- [ ] **Backend: expand `AscentUpdate` schema** — add optional `route_id`, `grade` fields (NOT `crag_id` — crag changes are session-level only, per eng review)
-- [ ] **Backend: `PUT /sessions/climbing/{id}`** endpoint:
+- [x] **Backend: expand `AscentUpdate` schema** — add optional `route_id`, `grade` fields (NOT `crag_id` — crag changes are session-level only, per eng review)
+- [x] **Backend: `PUT /sessions/climbing/{id}`** endpoint:
   - Accepts: `crag_id` (optional), `notes` (optional)
   - On crag change: validate target crag exists, check UNIQUE(date, crag_id) → 409 on conflict
   - Cascade: bulk `UPDATE ascent SET crag_id=?, crag_name=? WHERE session_id=?` (single query, not N+1)
   - Update `session.crag_id`, `session.crag_name`
   - Log: `"Session {id}: crag changed {old} → {new}, {n} ascents updated"`
   - Return updated session with nested ascents
-- [ ] **Backend: handle IntegrityError** on session crag update → return 409 "Session already exists at this crag on this date"
-- [ ] **Frontend: `SessionEditModal` component**:
+- [x] **Backend: handle IntegrityError** on session crag update → return 409 "Session already exists at this crag on this date"
+- [x] **Frontend: `SessionEditModal` component**:
   - Triggered by edit button on `ClimbingSessionCard`
   - Searchable crag combobox (type to filter, show recent/frequent at top)
   - Notes textarea
@@ -123,18 +123,18 @@ Build edit modals for climbing sessions and ascents. Expand backend edit surface
   - Disable save button during submit (prevent double-click)
   - Error toast on failure, re-enable button
   - On success: refresh feed/session data
-- [ ] **Frontend: `AscentEditModal` component**:
+- [x] **Frontend: `AscentEditModal` component**:
   - Triggered by edit button on individual route row (expanded session card)
   - Fields: grade, tick_type, tries, rating, notes, partner
   - Crag change via session edit only (not per-ascent) for consistency
   - Route name/grade update
-- [ ] **Frontend: searchable crag combobox** (reusable component):
+- [x] **Frontend: searchable crag combobox** (reusable component):
   - Fetches crags via `listCrags()`
   - Text input with filtered dropdown
   - Shows "No crags found" empty state
   - Handles 100+ crags performantly (virtual scroll if needed)
-- [ ] Add edit buttons to `ClimbingSessionCard` and route rows in log page
-- [ ] Add `updateSession` and update `updateAscent` in `api.ts`
+- [x] Add edit buttons to `ClimbingSessionCard` and route rows in log page
+- [x] Add `updateSession` and update `updateAscent` in `api.ts`
 
 **Files:** `app/backend/climbers_journal/routers/climbing.py`, `app/backend/climbers_journal/services/climbing.py`, `app/frontend/src/components/SessionEditModal.tsx` (new), `app/frontend/src/components/AscentEditModal.tsx` (new), `app/frontend/src/components/CragCombobox.tsx` (new), `app/frontend/src/app/log/page.tsx`, `app/frontend/src/lib/api.ts`
 

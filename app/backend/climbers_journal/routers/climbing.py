@@ -1,8 +1,12 @@
 import datetime
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
+from sqlalchemy.exc import IntegrityError
 from sqlmodel.ext.asyncio.session import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 from climbers_journal.db import get_session
 from climbers_journal.models.climbing import (
@@ -58,6 +62,13 @@ class AscentUpdate(BaseModel):
     rating: int | None = Field(default=None, ge=1, le=5)
     notes: str | None = None
     partner: str | None = None
+    route_id: int | None = None
+    grade: str | None = None
+
+
+class SessionUpdate(BaseModel):
+    crag_id: int | None = None
+    notes: str | None = None
 
 
 class CragResponse(BaseModel):
@@ -176,7 +187,7 @@ async def list_climbing_sessions(
         offset=offset,
         limit=limit,
     )
-    return [_serialize_session(cs) for cs in sessions]
+    return [svc.serialize_session(cs) for cs in sessions]
 
 
 @router.get("/sessions/climbing/{session_id}", response_model=SessionDetailResponse)
@@ -187,43 +198,61 @@ async def get_climbing_session(
     cs = await svc.get_climbing_session(session, session_id)
     if cs is None:
         raise HTTPException(status_code=404, detail="Climbing session not found.")
-    return _serialize_session(cs)
+    return svc.serialize_session(cs)
 
 
-def _serialize_session(cs) -> dict:
-    linked = None
-    if cs.linked_activity:
-        linked = {
-            "id": cs.linked_activity.id,
-            "duration_s": cs.linked_activity.duration_s,
-            "avg_hr": cs.linked_activity.avg_hr,
-            "max_hr": cs.linked_activity.max_hr,
-        }
-    return {
-        "id": cs.id,
-        "date": cs.date,
-        "crag_id": cs.crag_id,
-        "crag_name": cs.crag_name,
-        "notes": cs.notes,
-        "linked_activity": linked,
-        "ascents": [
-            {
-                "id": a.id,
-                "date": a.date,
-                "route_name": a.route_name,
-                "grade": a.grade,
-                "tick_type": a.tick_type.value,
-                "tries": a.tries,
-                "rating": a.rating,
-                "notes": a.notes,
-                "partner": a.partner,
-                "route_id": a.route_id,
-                "crag_id": a.crag_id,
-            }
-            for a in (cs.ascents or [])
-        ],
-        "ascent_count": len(cs.ascents or []),
-    }
+@router.put("/sessions/climbing/{session_id}", response_model=SessionDetailResponse)
+async def update_climbing_session(
+    session_id: int,
+    body: SessionUpdate,
+    session: AsyncSession = Depends(get_session),
+):
+    cs = await svc.get_climbing_session(session, session_id)
+    if cs is None:
+        raise HTTPException(status_code=404, detail="Climbing session not found.")
+
+    updates = body.model_dump(exclude_unset=True)
+    if not updates:
+        return svc.serialize_session(cs)
+
+    # Handle crag change with cascade
+    if "crag_id" in updates and updates["crag_id"] != cs.crag_id:
+        new_crag_id = updates["crag_id"]
+        new_crag = await svc.get_crag(session, new_crag_id)
+        if new_crag is None:
+            raise HTTPException(status_code=404, detail="Target crag not found.")
+
+        old_crag_name = cs.crag_name
+        cs.crag_id = new_crag_id
+        cs.crag_name = new_crag.name
+
+        # Cascade: update all ascents in this session
+        ascent_count = await svc.cascade_session_crag(
+            session, session_id, new_crag_id, new_crag.name
+        )
+        logger.info(
+            "Session %s: crag changed %s → %s, %d ascents updated",
+            session_id, old_crag_name, new_crag.name, ascent_count,
+        )
+
+    if "notes" in updates:
+        cs.notes = updates["notes"]
+
+    session.add(cs)
+    try:
+        await session.flush()
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="Session already exists at this crag on this date.",
+        )
+
+    await session.commit()
+
+    # Re-fetch with eager loads
+    cs = await svc.get_climbing_session(session, session_id)
+    return svc.serialize_session(cs)
 
 
 # ── Crags ──────────────────────────────────────────────────────────────
@@ -296,7 +325,7 @@ async def list_crag_sessions(
     sessions = await svc.list_climbing_sessions(
         session, crag_id=crag_id, offset=offset, limit=limit
     )
-    return [_serialize_session(cs) for cs in sessions]
+    return [svc.serialize_session(cs) for cs in sessions]
 
 
 # ── Areas ──────────────────────────────────────────────────────────────
@@ -369,7 +398,7 @@ async def update_ascent(
     body: AscentUpdate,
     session: AsyncSession = Depends(get_session),
 ):
-    updates = body.model_dump(exclude_none=True)
+    updates = body.model_dump(exclude_unset=True)
     ascent = await svc.update_ascent(session, ascent_id, **updates)
     await session.commit()
     return ascent

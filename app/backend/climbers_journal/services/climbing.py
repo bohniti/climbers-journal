@@ -456,9 +456,19 @@ async def update_ascent(
     if ascent is None:
         raise HTTPException(status_code=404, detail="Ascent not found.")
 
+    # If route_id changes, denormalize route_name and optionally grade
+    if "route_id" in updates:
+        new_route_id = updates["route_id"]
+        if new_route_id is not None:
+            route = await session.get(Route, new_route_id)
+            if route is None:
+                raise HTTPException(status_code=404, detail="Route not found.")
+            updates["route_name"] = route.name
+            if "grade" not in updates:
+                updates["grade"] = route.grade
+
     for key, value in updates.items():
-        if value is not None:
-            setattr(ascent, key, value)
+        setattr(ascent, key, value)
 
     session.add(ascent)
     await session.flush()
@@ -655,6 +665,26 @@ async def get_climbing_session(
     return result.first()
 
 
+async def cascade_session_crag(
+    session: AsyncSession,
+    session_id: int,
+    new_crag_id: int,
+    new_crag_name: str,
+) -> int:
+    """Bulk update crag_id and crag_name on all ascents in a session.
+
+    Returns the number of ascents updated.
+    """
+    result = await session.execute(
+        text(
+            "UPDATE ascent SET crag_id = :crag_id, crag_name = :crag_name "
+            "WHERE session_id = :session_id"
+        ),
+        {"crag_id": new_crag_id, "crag_name": new_crag_name, "session_id": session_id},
+    )
+    return result.rowcount or 0
+
+
 # ── Bulk Session Create ────────────────────────────────────────────────
 
 
@@ -797,7 +827,7 @@ async def get_activity_feed(
             items.append({
                 "kind": "session",
                 "date": cs.date.isoformat(),
-                "data": _session_to_dict(cs),
+                "data": serialize_session(cs),
             })
 
     if feed_type in ("all", "endurance"):
@@ -837,7 +867,7 @@ async def get_activity_feed(
     return items[offset : offset + limit]
 
 
-def _session_to_dict(cs: ClimbingSession) -> dict:
+def serialize_session(cs: ClimbingSession) -> dict:
     """Serialize a ClimbingSession with nested ascents and linked activity."""
     linked = None
     if cs.linked_activity:

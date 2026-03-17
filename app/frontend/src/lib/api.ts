@@ -319,6 +319,56 @@ export async function listAscents(
   return res.json();
 }
 
+// ── Ascent / Session Mutations ────────────────────────────────────────
+
+export interface AscentUpdateRequest {
+  date?: string;
+  tick_type?: string;
+  tries?: number | null;
+  rating?: number | null;
+  notes?: string | null;
+  partner?: string | null;
+  route_id?: number | null;
+  grade?: string | null;
+}
+
+export async function updateAscent(
+  ascentId: number,
+  data: AscentUpdateRequest
+): Promise<AscentResponse> {
+  const res = await fetch(`${API_BASE}/ascents/${ascentId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to update ascent (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
+export interface SessionUpdateRequest {
+  crag_id?: number;
+  notes?: string | null;
+}
+
+export async function updateSession(
+  sessionId: number,
+  data: SessionUpdateRequest
+): Promise<CragSessionResponse> {
+  const res = await fetch(`${API_BASE}/sessions/climbing/${sessionId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to update session (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
 // ── Dashboard / Stats ─────────────────────────────────────────────────
 
 export interface GradePyramidEntry {
