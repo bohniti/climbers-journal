@@ -110,25 +110,25 @@ Three problems with the current activity system:
 
 The activity log becomes a single chronological feed where climbing sessions and endurance activities are peers — no more "climbing" vs "endurance" bucket split.
 
-- [ ] Define unified `ActivityItem` type:
+- [x] Define unified `ActivityItem` type:
   ```
   type ActivityItem =
     | { kind: "session"; date: string; data: ClimbingSessionResponse }
     | { kind: "endurance"; date: string; data: ActivityResponse }
   ```
-- [ ] Replace flat `ClimbingCard` with `ClimbingSessionCard`:
-  - **Collapsed state:** session icon + crag name + date + duration (from linked watch) + route count + style breakdown pills ("3× sport  2× boulder")
+- [x] Replace flat `ClimbingCard` with `ClimbingSessionCard`:
+  - **Collapsed state:** session icon + crag name + date + duration (from linked watch) + route count + tick type pills
   - **Expand level 1 (summary):** stats line "5 routes · hardest 7a · 3 sends · 2 attempts" + "Show all N routes" button
   - **Expand level 2 (routes):** full route list with grade, tick type, tries
   - For sessions with >10 routes, level 1 is the default expand (avoids overwhelming)
-- [ ] Update `LogPage` to fetch from single `GET /feed` endpoint (no more dual-cursor merge)
-- [ ] Pagination: single offset/limit cursor via the `/feed` endpoint
-- [ ] Endurance cards use new sport type icons from Step 1
-- [ ] Update filter bar:
-  - "All activities" / "Climbing" / "Endurance" / specific sport types
-  - Remove tick_type filter from top level (move into session expand)
-- [ ] Show linked watch duration on session cards when available ("2h 45m at Kletterhalle Wien")
-- [ ] Update dashboard recent activity section to reuse unified feed component (replace flat `recent_climbing` / `recent_endurance` with `/feed?limit=10`)
+- [x] Update `LogPage` to fetch from single `GET /feed` endpoint (no more dual-cursor merge)
+- [x] Pagination: single offset/limit cursor via the `/feed` endpoint
+- [x] Endurance cards use new sport type icons from Step 1
+- [x] Update filter bar:
+  - "All activities" / "Climbing" / "Endurance"
+  - Removed tick_type filter from top level (tick types shown as pills on session cards)
+- [x] Show linked watch duration on session cards when available ("2h 45m at Kletterhalle Wien")
+- [x] Update dashboard recent activity section to reuse unified feed component (replace flat `recent_climbing` / `recent_endurance` with `/feed?limit=10`)
 
 **Files:** `app/frontend/src/app/log/page.tsx`, `app/frontend/src/lib/api.ts`, `app/frontend/src/lib/constants.ts`, `app/frontend/src/app/page.tsx`
 
