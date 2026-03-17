@@ -3,6 +3,7 @@ from datetime import date
 
 from fastapi import HTTPException
 from sqlalchemy import func, text, union_all
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -392,7 +393,21 @@ async def get_or_create_session(
         notes=notes,
     )
     session.add(cs)
-    await session.flush()
+    try:
+        await session.flush()
+    except IntegrityError:
+        await session.rollback()
+        # Concurrent insert won the race — re-query
+        result = await session.exec(
+            select(ClimbingSession).where(
+                ClimbingSession.date == session_date,
+                ClimbingSession.crag_id == crag_id,
+            )
+        )
+        existing = result.first()
+        if existing:
+            return existing, False
+        raise  # unexpected — unique constraint wasn't the cause
 
     # Auto-link RockClimbing endurance activity
     await _try_link_activity(session, cs)
