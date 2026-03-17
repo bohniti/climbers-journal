@@ -653,3 +653,19 @@ export async function listActivities(
   }
   return res.json();
 }
+
+export async function updateActivity(
+  activityId: number,
+  data: Record<string, unknown>
+): Promise<ActivityResponse> {
+  const res = await fetch(`${API_BASE}/activities/${activityId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to update activity (${res.status}): ${text}`);
+  }
+  return res.json();
+}
