@@ -7,6 +7,7 @@ const links = [
   { href: "/", label: "Dashboard", exact: true, tourStep: undefined },
   { href: "/calendar", label: "Calendar", exact: false, tourStep: "calendar" },
   { href: "/log", label: "Log", exact: false, tourStep: undefined },
+  { href: "/crags", label: "Crags", exact: false, tourStep: undefined },
   { href: "/import", label: "Import", exact: false, tourStep: "import" },
   { href: "/chat", label: "Copilot", exact: false, tourStep: "copilot" },
 ] as const;

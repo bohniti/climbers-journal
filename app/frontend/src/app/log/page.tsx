@@ -15,8 +15,9 @@ import {
   formatDuration,
   formatDate,
   formatDistance,
-  sportIcon,
+  sportCategory,
 } from "@/lib/constants";
+import ActivityIcon from "@/components/ActivityIcon";
 
 // ── Filter state ──────────────────────────────────────────────────────
 
@@ -266,14 +267,18 @@ function ClimbingSessionCard({ session }: { session: FeedSessionData }) {
         className="w-full px-4 py-3"
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-900/30 text-lg">
-            {"\u{1F9D7}"}
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-900/30">
+            <ActivityIcon category="climbing" size="md" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="truncate text-sm font-medium text-slate-100">
+              <Link
+                href={`/crags/${session.crag_id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="truncate text-sm font-medium text-slate-100 hover:text-emerald-400"
+              >
                 {session.crag_name ?? "Unknown crag"}
-              </span>
+              </Link>
               {linkedDuration != null && (
                 <span className="shrink-0 rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">
                   {formatDuration(linkedDuration)}
@@ -408,8 +413,8 @@ function EnduranceCard({ activity }: { activity: ActivityResponse }) {
       className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-left transition-colors hover:border-slate-600"
     >
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-900/30 text-lg">
-          {sportIcon(activity.type)}
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-900/30">
+          <ActivityIcon category={sportCategory(activity.type)} size="md" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">

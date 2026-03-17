@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.15.4.0] - 2026-03-17
+
+### Added
+- PNG icon system replacing all emoji icons across the app
+- `ActivityIcon` component with category-based PNG mapping (climber, runner, cycling, skiing, gym, default)
+- `VenueIcon` component for crag/gym venue display (home.png, gym.png)
+- 8 custom PNG icons in `public/icons/`
+
+### Changed
+- `SPORT_TYPES` icon field now stores PNG filenames instead of emoji strings
+- All UI components (dashboard, log, calendar, crags) use `ActivityIcon` instead of emoji rendering
+- Session streak indicator uses styled dot instead of fire emoji
+
+### Removed
+- `sportIcon()` helper function (replaced by `ActivityIcon` component)
+- `CLIMBING_STYLE_ICONS` constant (unused after icon migration)
+
+## [0.15.3.0] - 2026-03-17
+
+### Added
+- Crag browser page (`/crags`) with search, sort (last visited/name/session count), venue badges, and relative dates
+- Crag detail page (`/crags/[id]`) with quick-stats header (sessions, routes logged, best send, last visited) and paginated session history
+- Backend endpoints: `GET /crags/{id}`, `GET /crags/{id}/stats`, `GET /crags/{id}/sessions`
+- Enhanced `GET /crags` with search, sort, and inline stats (session count, last visited)
+- Crag name links on session cards in log page and dashboard recent activity
+- Nav link to crag browser
+
+### Fixed
+- PostgreSQL COALESCE type mismatch with asyncpg (date vs varchar)
+
 ## [0.15.2.0] - 2026-03-17
 
 ### Added
