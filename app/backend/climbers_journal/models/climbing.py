@@ -1,6 +1,6 @@
 import enum
 import unicodedata
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Column, Index, String
@@ -109,7 +109,7 @@ class Crag(SQLModel, table=True):
     latitude: float | None = None
     longitude: float | None = None
     description: str | None = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
 
     # Relationships
     areas: list["Area"] = Relationship(back_populates="crag")
@@ -126,7 +126,7 @@ class Area(SQLModel, table=True):
     )
     description: str | None = None
     crag_id: int = Field(foreign_key="crag.id")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
 
     # Relationships
     crag: Crag | None = Relationship(back_populates="areas")
@@ -147,7 +147,7 @@ class Route(SQLModel, table=True):
     description: str | None = None
     crag_id: int = Field(foreign_key="crag.id")
     area_id: int | None = Field(default=None, foreign_key="area.id")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
 
     # Relationships
     crag: Crag | None = Relationship(back_populates="routes")
@@ -175,7 +175,7 @@ class Ascent(SQLModel, table=True):
     crag_name: str | None = None
     route_name: str | None = None
     grade: str | None = None  # override for gym ascents without route
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
 
     # Relationships
     route: Route | None = Relationship(back_populates="ascents")

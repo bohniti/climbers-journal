@@ -117,7 +117,7 @@ def upgrade() -> None:
     op.create_index("ix_activity_type", "activity", ["type"], unique=False)
     op.create_index("ix_activity_intervals_id", "activity", ["intervals_id"], unique=True)
     op.create_index("ix_activity_crag_id", "activity", ["crag_id"], unique=False)
-    op.create_index("uq_activity_date_crag", "activity", ["date", "crag_id"], unique=True)
+    # No unique constraint on (date, crag_id) — multiple sessions per crag per day is valid
 
     # ── Ascent ────────────────────────────────────────────────────────
     op.create_table(
@@ -154,7 +154,6 @@ def downgrade() -> None:
     op.drop_index("ix_ascent_activity_id", table_name="ascent")
     op.drop_index("ix_ascent_crag_tick_date", table_name="ascent")
     op.drop_table("ascent")
-    op.drop_index("uq_activity_date_crag", table_name="activity")
     op.drop_index("ix_activity_crag_id", table_name="activity")
     op.drop_index("ix_activity_intervals_id", table_name="activity")
     op.drop_index("ix_activity_type", table_name="activity")

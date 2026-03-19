@@ -110,7 +110,7 @@ class Activity(SQLModel, table=True):
         Index("ix_activity_type", "type"),
         Index("ix_activity_intervals_id", "intervals_id", unique=True),
         Index("ix_activity_crag_id", "crag_id"),
-        Index("uq_activity_date_crag", "date", "crag_id", unique=True),
+        # Note: no unique constraint on (date, crag_id) — multiple sessions per crag per day is valid
     )
 
     id: int | None = Field(default=None, primary_key=True)
