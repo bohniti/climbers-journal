@@ -1,7 +1,11 @@
+from climbers_journal.models.activity import (
+    Activity,
+    ActivitySource,
+    sport_category,
+)
 from climbers_journal.models.climbing import (
     Area,
     Ascent,
-    ClimbingSession,
     Crag,
     GradeSystem,
     Route,
@@ -9,21 +13,17 @@ from climbers_journal.models.climbing import (
     TickType,
     VenueType,
 )
-from climbers_journal.models.endurance import (
-    ActivitySource,
-    EnduranceActivity,
-)
 
 __all__ = [
+    "Activity",
     "ActivitySource",
     "Area",
     "Ascent",
-    "ClimbingSession",
     "Crag",
-    "EnduranceActivity",
     "GradeSystem",
     "Route",
     "RouteStyle",
     "TickType",
     "VenueType",
+    "sport_category",
 ]

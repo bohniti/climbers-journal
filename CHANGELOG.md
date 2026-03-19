@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.15.7.0] - 2026-03-19
+
+### Changed
+- Unified `Activity` model replaces split `EnduranceActivity` + `ClimbingSession` tables — all activities are now stored in a single table distinguished by `type`/`subtype`
+- Squashed all Alembic migrations into one clean initial migration (`0001_initial`)
+- Renamed `services/climbing.py` to `services/activity.py` to reflect unified model
+- `PUT /activities/{id}` endpoint for editing any activity (name, notes, crag assignment with denormalization cascade)
+- `ActivityResponse` now includes climbing fields: `notes`, `crag_id`, `crag_name`, `ascent_count`
+- `sport_category()` helper maps Strava subtypes to categories (mirrors frontend `sportCategory()`)
+
+### Removed
+- `EnduranceActivity` model and `models/endurance.py`
+- `ClimbingSession` model — replaced by `Activity(type="climbing")`
+- Activity linking (`linked_activity_id`) — no longer needed with unified model
+- Five individual Alembic migrations (squashed into one)
+
 ## [0.15.6.0] - 2026-03-17
 
 ### Added

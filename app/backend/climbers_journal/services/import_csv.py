@@ -28,8 +28,8 @@ from climbers_journal.models.climbing import (
     TickType,
     VenueType,
 )
-from climbers_journal.services.climbing import (
-    create_climbing_session,
+from climbers_journal.services.activity import (
+    create_climbing_activity,
 )
 
 REQUIRED_COLUMNS = {"date", "crag_name", "grade", "tick_type"}
@@ -215,7 +215,7 @@ async def import_climbing_csv(
         for i in range(0, len(ascents), BATCH_SIZE):
             batch = ascents[i : i + BATCH_SIZE]
             try:
-                result = await create_climbing_session(
+                result = await create_climbing_activity(
                     session,
                     crag_name=crag_name,
                     crag_country=meta["country"],

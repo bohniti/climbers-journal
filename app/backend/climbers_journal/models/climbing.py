@@ -1,10 +1,13 @@
 import enum
 import unicodedata
-from datetime import date, datetime
-from typing import Optional
+from datetime import UTC, date, datetime
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Column, Index, String
 from sqlmodel import Field, Relationship, SQLModel
+
+if TYPE_CHECKING:
+    from climbers_journal.models.activity import Activity
 
 
 # ── Enums ──────────────────────────────────────────────────────────────
@@ -106,13 +109,13 @@ class Crag(SQLModel, table=True):
     latitude: float | None = None
     longitude: float | None = None
     description: str | None = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
 
     # Relationships
     areas: list["Area"] = Relationship(back_populates="crag")
     routes: list["Route"] = Relationship(back_populates="crag")
     ascents: list["Ascent"] = Relationship(back_populates="crag")
-    sessions: list["ClimbingSession"] = Relationship(back_populates="crag")
+    activities: list["Activity"] = Relationship(back_populates="crag")
 
 
 class Area(SQLModel, table=True):
@@ -123,7 +126,7 @@ class Area(SQLModel, table=True):
     )
     description: str | None = None
     crag_id: int = Field(foreign_key="crag.id")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
 
     # Relationships
     crag: Crag | None = Relationship(back_populates="areas")
@@ -144,7 +147,7 @@ class Route(SQLModel, table=True):
     description: str | None = None
     crag_id: int = Field(foreign_key="crag.id")
     area_id: int | None = Field(default=None, foreign_key="area.id")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
 
     # Relationships
     crag: Crag | None = Relationship(back_populates="routes")
@@ -152,34 +155,10 @@ class Route(SQLModel, table=True):
     ascents: list["Ascent"] = Relationship(back_populates="route")
 
 
-class ClimbingSession(SQLModel, table=True):
-    __tablename__ = "climbing_session"
-    __table_args__ = (
-        Index("ix_session_date", "date"),
-        Index("ix_session_crag_id", "crag_id"),
-        Index("uq_session_date_crag", "date", "crag_id", unique=True),
-    )
-
-    id: int | None = Field(default=None, primary_key=True)
-    date: date
-    crag_id: int = Field(foreign_key="crag.id")
-    crag_name: str | None = None  # denormalized
-    notes: str | None = None
-    linked_activity_id: int | None = Field(
-        default=None, foreign_key="endurance_activity.id"
-    )
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-
-    # Relationships
-    crag: Crag | None = Relationship(back_populates="sessions")
-    ascents: list["Ascent"] = Relationship(back_populates="session")
-    linked_activity: Optional["EnduranceActivity"] = Relationship()
-
-
 class Ascent(SQLModel, table=True):
     __table_args__ = (
         Index("ix_ascent_crag_tick_date", "crag_id", "tick_type", "date"),
-        Index("ix_ascent_session_id", "session_id"),
+        Index("ix_ascent_activity_id", "activity_id"),
     )
 
     id: int | None = Field(default=None, primary_key=True)
@@ -191,14 +170,14 @@ class Ascent(SQLModel, table=True):
     partner: str | None = None
     route_id: int | None = Field(default=None, foreign_key="route.id")
     crag_id: int = Field(foreign_key="crag.id")
-    session_id: int | None = Field(default=None, foreign_key="climbing_session.id")
+    activity_id: int | None = Field(default=None, foreign_key="activity.id")
     # Denormalized for read performance
     crag_name: str | None = None
     route_name: str | None = None
     grade: str | None = None  # override for gym ascents without route
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
 
     # Relationships
     route: Route | None = Relationship(back_populates="ascents")
     crag: Crag | None = Relationship(back_populates="ascents")
-    session: ClimbingSession | None = Relationship(back_populates="ascents")
+    activity: Optional["Activity"] = Relationship(back_populates="ascents")

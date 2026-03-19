@@ -8,7 +8,7 @@ from typing import Any
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from climbers_journal.models.climbing import normalize_name, suggest_grade_system
-from climbers_journal.services.climbing import find_crag_by_name, list_routes
+from climbers_journal.services.activity import find_crag_by_name, list_routes
 
 # Map common climbing synonyms to valid TickType values
 TICK_TYPE_ALIASES: dict[str, str] = {
