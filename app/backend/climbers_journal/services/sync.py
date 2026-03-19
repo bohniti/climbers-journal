@@ -8,6 +8,7 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from climbers_journal.models.activity import Activity, ActivitySource, sport_category
+from climbers_journal.models.climbing import Crag
 from climbers_journal.services import intervals
 
 logger = logging.getLogger(__name__)
@@ -202,10 +203,34 @@ async def update_activity(
     activity_id: int,
     **updates: object,
 ) -> Activity | None:
-    """Update editable fields on any Activity. Returns None if not found."""
+    """Update editable fields on any Activity. Returns None if not found.
+
+    When crag_id changes, automatically denormalizes crag_name and cascades
+    to ascents for climbing-type activities.
+    """
     activity = await session.get(Activity, activity_id)
     if activity is None:
         return None
+
+    # Handle crag_id change: denormalize crag_name + cascade to ascents
+    if "crag_id" in updates and updates["crag_id"] != activity.crag_id:
+        new_crag_id = updates["crag_id"]
+        if new_crag_id is not None:
+            crag = await session.get(Crag, new_crag_id)
+            if crag is not None:
+                updates["crag_name"] = crag.name
+                # Cascade to ascents if this is a climbing activity
+                if activity.type == "climbing":
+                    from sqlalchemy import text
+                    await session.execute(
+                        text(
+                            "UPDATE ascent SET crag_id = :crag_id, crag_name = :crag_name "
+                            "WHERE activity_id = :activity_id"
+                        ),
+                        {"crag_id": new_crag_id, "crag_name": crag.name, "activity_id": activity_id},
+                    )
+        else:
+            updates["crag_name"] = None
 
     for key, value in updates.items():
         setattr(activity, key, value)

@@ -51,6 +51,7 @@ class ActivityResponse(BaseModel):
     source: ActivitySource
     crag_id: int | None = None
     crag_name: str | None = None
+    ascent_count: int = 0
 
 
 class ActivityUpdateRequest(BaseModel):
