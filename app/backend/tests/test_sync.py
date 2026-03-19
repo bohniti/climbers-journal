@@ -8,11 +8,13 @@ import pytest
 from sqlmodel import select
 
 from climbers_journal.models.activity import Activity, ActivitySource
+from climbers_journal.models.climbing import Crag, GradeSystem, VenueType, normalize_name
 from climbers_journal.services.sync import (
     _month_ranges,
     _parse_activity,
     list_activities,
     sync_activities,
+    update_activity,
     upsert_activity,
 )
 
@@ -186,6 +188,47 @@ class TestListActivities:
 
         # Date desc ordering: first page should have later dates
         assert page1[0].date > page2[0].date
+
+
+class TestUpdateActivity:
+    @pytest.mark.asyncio
+    async def test_update_name_and_notes(self, session):
+        data = _make_activity_data()
+        activity, _ = await upsert_activity(session, data)
+        await session.flush()
+
+        updated = await update_activity(
+            session, activity.id, name="New Name", notes="Some notes"
+        )
+        assert updated is not None
+        assert updated.name == "New Name"
+        assert updated.notes == "Some notes"
+
+    @pytest.mark.asyncio
+    async def test_update_not_found(self, session):
+        result = await update_activity(session, 99999, name="nope")
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_update_crag_id_denormalizes_name(self, session):
+        """Changing crag_id should also update crag_name."""
+        crag = Crag(
+            name="Test Crag",
+            name_normalized=normalize_name("Test Crag"),
+            venue_type=VenueType.outdoor_crag,
+            default_grade_sys=GradeSystem.french,
+        )
+        session.add(crag)
+        await session.flush()
+
+        data = _make_activity_data(type="climbing", subtype="RockClimbing")
+        activity, _ = await upsert_activity(session, data)
+        await session.flush()
+
+        updated = await update_activity(session, activity.id, crag_id=crag.id)
+        assert updated is not None
+        assert updated.crag_id == crag.id
+        assert updated.crag_name == "Test Crag"
 
 
 class TestSyncActivities:
