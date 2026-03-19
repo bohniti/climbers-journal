@@ -1,13 +1,13 @@
-"""Endpoints for syncing and listing endurance activities."""
+"""Endpoints for syncing and listing activities."""
 
 import datetime
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from climbers_journal.db import get_session
-from climbers_journal.models.endurance import ActivitySource
+from climbers_journal.models.activity import Activity, ActivitySource
 from climbers_journal.services import sync as sync_svc
 
 router = APIRouter(tags=["sync"])
@@ -35,11 +35,13 @@ class SyncResponse(BaseModel):
 
 class ActivityResponse(BaseModel):
     id: int
-    intervals_id: str
+    intervals_id: str | None
     date: datetime.date
     type: str
+    subtype: str | None
     name: str | None
-    duration_s: int
+    notes: str | None = None
+    duration_s: int | None
     distance_m: float | None
     elevation_gain_m: float | None
     avg_hr: int | None
@@ -47,6 +49,14 @@ class ActivityResponse(BaseModel):
     training_load: float | None
     intensity: float | None
     source: ActivitySource
+    crag_id: int | None = None
+    crag_name: str | None = None
+
+
+class ActivityUpdateRequest(BaseModel):
+    name: str | None = None
+    notes: str | None = None
+    crag_id: int | None = None
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────
@@ -82,3 +92,23 @@ async def list_activities(
         offset=offset,
         limit=limit,
     )
+
+
+@router.put("/activities/{activity_id}", response_model=ActivityResponse)
+async def update_activity(
+    activity_id: int,
+    body: ActivityUpdateRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    updates = body.model_dump(exclude_unset=True)
+    if not updates:
+        activity = await session.get(Activity, activity_id)
+        if activity is None:
+            raise HTTPException(status_code=404, detail="Activity not found.")
+        return activity
+
+    activity = await sync_svc.update_activity(session, activity_id, **updates)
+    if activity is None:
+        raise HTTPException(status_code=404, detail="Activity not found.")
+    await session.commit()
+    return activity

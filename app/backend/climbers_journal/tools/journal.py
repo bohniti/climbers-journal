@@ -10,17 +10,16 @@ from sqlalchemy import func, case
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from climbers_journal.models.activity import Activity
 from climbers_journal.models.climbing import (
     Ascent,
-    ClimbingSession,
     Crag,
     Route,
     TickType,
     VenueType,
     normalize_name,
 )
-from climbers_journal.models.endurance import EnduranceActivity
-from climbers_journal.services.climbing import list_climbing_sessions, serialize_session
+from climbers_journal.services.activity import list_climbing_activities, serialize_activity
 
 # Tick types that count as "sends"
 SEND_TICK_TYPES = {
@@ -165,7 +164,7 @@ definitions: list[dict[str, Any]] = [
         "function": {
             "name": "get_sessions",
             "description": (
-                "Query climbing sessions grouped by date and crag. Each session contains "
+                "Query climbing activities grouped by date and crag. Each activity contains "
                 "nested ascents (routes climbed). Filter by date range or crag name."
             ),
             "parameters": {
@@ -185,7 +184,7 @@ definitions: list[dict[str, Any]] = [
                     },
                     "limit": {
                         "type": "integer",
-                        "description": "Max sessions to return (default 20).",
+                        "description": "Max activities to return (default 20).",
                     },
                 },
                 "required": [],
@@ -432,11 +431,15 @@ async def _get_training_overview(args: dict[str, Any], session: AsyncSession) ->
             "date": str(hardest.date),
         }
 
-    # Endurance: activities in period
+    # Endurance: non-climbing activities in period
     endurance_stmt = (
-        select(EnduranceActivity)
-        .where(EnduranceActivity.date >= d_from, EnduranceActivity.date <= d_to)
-        .order_by(EnduranceActivity.date)
+        select(Activity)
+        .where(
+            Activity.type != "climbing",
+            Activity.date >= d_from,
+            Activity.date <= d_to,
+        )
+        .order_by(Activity.date)
     )
     result = await session.exec(endurance_stmt)
     endurance_activities = result.all()
@@ -446,16 +449,16 @@ async def _get_training_overview(args: dict[str, Any], session: AsyncSession) ->
     total_distance_m = 0.0
     total_load = 0.0
     for ea in endurance_activities:
-        total_duration_s += ea.duration_s
+        total_duration_s += ea.duration_s or 0
         if ea.distance_m:
             total_distance_m += ea.distance_m
         if ea.training_load:
             total_load += ea.training_load
         endurance_items.append({
             "date": str(ea.date),
-            "type": ea.type,
+            "type": ea.subtype or ea.type,
             "name": ea.name,
-            "duration_min": round(ea.duration_s / 60),
+            "duration_min": round((ea.duration_s or 0) / 60),
             "distance_km": round(ea.distance_m / 1000, 1) if ea.distance_m else None,
             "training_load": ea.training_load,
         })
@@ -482,7 +485,7 @@ async def _get_training_overview(args: dict[str, Any], session: AsyncSession) ->
 
 
 async def _get_sessions(args: dict[str, Any], session: AsyncSession) -> str:
-    """Query climbing sessions with nested ascents."""
+    """Query climbing activities with nested ascents."""
     limit = min(args.get("limit", 20), 50)
 
     date_from = date.fromisoformat(args["date_from"]) if args.get("date_from") else None
@@ -499,7 +502,7 @@ async def _get_sessions(args: dict[str, Any], session: AsyncSession) -> str:
         else:
             return json.dumps({"sessions": [], "count": 0, "note": f"No crag found matching '{crag_name}'"})
 
-    sessions = await list_climbing_sessions(
+    activities = await list_climbing_activities(
         session,
         date_from=date_from,
         date_to=date_to,
@@ -507,7 +510,7 @@ async def _get_sessions(args: dict[str, Any], session: AsyncSession) -> str:
         limit=limit,
     )
 
-    items = [serialize_session(cs) for cs in sessions]
+    items = [serialize_activity(a) for a in activities]
     return json.dumps({"sessions": items, "count": len(items)}, default=str)
 
 

@@ -2,16 +2,15 @@ import logging
 from datetime import date
 
 from fastapi import HTTPException
-from sqlalchemy import func, text, union_all
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func, text
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from climbers_journal.models.activity import Activity, ActivitySource, sport_category
 from climbers_journal.models.climbing import (
     Area,
     Ascent,
-    ClimbingSession,
     Crag,
     GradeSystem,
     Route,
@@ -21,7 +20,6 @@ from climbers_journal.models.climbing import (
     normalize_name,
     suggest_grade_system,
 )
-from climbers_journal.models.endurance import EnduranceActivity
 
 logger = logging.getLogger(__name__)
 
@@ -96,13 +94,14 @@ async def get_crag(session: AsyncSession, crag_id: int) -> Crag | None:
 
 
 async def get_crag_stats(session: AsyncSession, crag_id: int) -> dict:
-    """Compute stats for a crag: session count, route count, hardest send, last visited."""
-    session_count_r = await session.exec(
-        select(func.count()).select_from(ClimbingSession).where(
-            ClimbingSession.crag_id == crag_id
+    """Compute stats for a crag: activity count, route count, hardest send, last visited."""
+    activity_count_r = await session.exec(
+        select(func.count()).select_from(Activity).where(
+            Activity.crag_id == crag_id,
+            Activity.type == "climbing",
         )
     )
-    session_count = session_count_r.one()
+    activity_count = activity_count_r.one()
 
     route_count_r = await session.exec(
         select(func.count()).select_from(Route).where(Route.crag_id == crag_id)
@@ -116,8 +115,9 @@ async def get_crag_stats(session: AsyncSession, crag_id: int) -> dict:
 
     # Last visited date
     last_visited_r = await session.exec(
-        select(func.max(ClimbingSession.date)).where(
-            ClimbingSession.crag_id == crag_id
+        select(func.max(Activity.date)).where(
+            Activity.crag_id == crag_id,
+            Activity.type == "climbing",
         )
     )
     last_visited = last_visited_r.one()
@@ -148,7 +148,7 @@ async def get_crag_stats(session: AsyncSession, crag_id: int) -> dict:
         }
 
     return {
-        "session_count": session_count,
+        "activity_count": activity_count,
         "route_count": route_count,
         "ascent_count": ascent_count,
         "last_visited": last_visited.isoformat() if last_visited else None,
@@ -164,25 +164,26 @@ async def list_crags_with_stats(
     offset: int = 0,
     limit: int = 50,
 ) -> list[dict]:
-    """List crags with session count and last visited date for the browser page."""
-    # Subquery for session count and last visited
-    session_stats = (
+    """List crags with activity count and last visited date for the browser page."""
+    # Subquery for activity count and last visited (climbing activities only)
+    activity_stats = (
         select(
-            ClimbingSession.crag_id,
-            func.count(ClimbingSession.id).label("session_count"),
-            func.max(ClimbingSession.date).label("last_visited"),
+            Activity.crag_id,
+            func.count(Activity.id).label("activity_count"),
+            func.max(Activity.date).label("last_visited"),
         )
-        .group_by(ClimbingSession.crag_id)
+        .where(Activity.type == "climbing")
+        .group_by(Activity.crag_id)
         .subquery()
     )
 
     stmt = (
         select(
             Crag,
-            func.coalesce(session_stats.c.session_count, 0).label("session_count"),
-            session_stats.c.last_visited,
+            func.coalesce(activity_stats.c.activity_count, 0).label("activity_count"),
+            activity_stats.c.last_visited,
         )
-        .outerjoin(session_stats, Crag.id == session_stats.c.crag_id)
+        .outerjoin(activity_stats, Crag.id == activity_stats.c.crag_id)
     )
 
     if search:
@@ -193,12 +194,12 @@ async def list_crags_with_stats(
         stmt = stmt.order_by(Crag.name)
     elif sort == "session_count":
         stmt = stmt.order_by(
-            func.coalesce(session_stats.c.session_count, 0).desc(),
+            func.coalesce(activity_stats.c.activity_count, 0).desc(),
             Crag.name,
         )
     else:  # last_visited (default)
         stmt = stmt.order_by(
-            func.coalesce(session_stats.c.last_visited, date(1970, 1, 1)).desc(),
+            func.coalesce(activity_stats.c.last_visited, date(1970, 1, 1)).desc(),
             Crag.name,
         )
 
@@ -371,7 +372,7 @@ async def create_ascent(
     notes: str | None = None,
     partner: str | None = None,
     grade: str | None = None,
-    session_id: int | None = None,
+    activity_id: int | None = None,
     skip_dedup: bool = False,
 ) -> Ascent:
     """Create an ascent. Validates constraints and checks for duplicates."""
@@ -433,7 +434,7 @@ async def create_ascent(
         partner=partner,
         route_id=route_id,
         crag_id=crag_id,
-        session_id=session_id,
+        activity_id=activity_id,
         crag_name=crag_name,
         route_name=route_name,
         grade=grade,
@@ -508,122 +509,47 @@ async def list_ascents(
     return list(result.all())
 
 
-# ── Climbing Session ──────────────────────────────────────────────────
+# ── Climbing Activity ────────────────────────────────────────────────
 
 
-async def get_or_create_session(
+async def get_or_create_climbing_activity(
     session: AsyncSession,
     *,
-    session_date: date,
+    activity_date: date,
     crag_id: int,
     crag_name: str | None = None,
     notes: str | None = None,
-) -> tuple[ClimbingSession, bool]:
-    """Get existing session for (date, crag_id) or create new one.
+) -> tuple[Activity, bool]:
+    """Get existing climbing activity for (date, crag_id) or create new one.
 
-    Returns (climbing_session, created).
+    Returns (activity, created).
     """
     result = await session.exec(
-        select(ClimbingSession).where(
-            ClimbingSession.date == session_date,
-            ClimbingSession.crag_id == crag_id,
+        select(Activity).where(
+            Activity.type == "climbing",
+            Activity.date == activity_date,
+            Activity.crag_id == crag_id,
         )
     )
     existing = result.first()
     if existing:
         return existing, False
 
-    cs = ClimbingSession(
-        date=session_date,
+    activity = Activity(
+        date=activity_date,
+        type="climbing",
+        subtype="RockClimbing",
+        source=ActivitySource.manual,
         crag_id=crag_id,
         crag_name=crag_name,
         notes=notes,
     )
-    session.add(cs)
-    try:
-        await session.flush()
-    except IntegrityError:
-        await session.rollback()
-        # Concurrent insert won the race — re-query
-        result = await session.exec(
-            select(ClimbingSession).where(
-                ClimbingSession.date == session_date,
-                ClimbingSession.crag_id == crag_id,
-            )
-        )
-        existing = result.first()
-        if existing:
-            return existing, False
-        raise  # unexpected — unique constraint wasn't the cause
-
-    # Auto-link RockClimbing endurance activity
-    await _try_link_activity(session, cs)
-
-    return cs, True
+    session.add(activity)
+    await session.flush()
+    return activity, True
 
 
-async def _try_link_activity(
-    session: AsyncSession, cs: ClimbingSession
-) -> None:
-    """Try to auto-link a RockClimbing endurance activity to this session."""
-    result = await session.exec(
-        select(EnduranceActivity).where(
-            EnduranceActivity.date == cs.date,
-            EnduranceActivity.type == "RockClimbing",
-        )
-    )
-    candidates = list(result.all())
-    if len(candidates) == 1:
-        cs.linked_activity_id = candidates[0].id
-        session.add(cs)
-    elif len(candidates) > 1:
-        logger.warning(
-            "Multiple RockClimbing activities on %s — skipping auto-link for session %s",
-            cs.date, cs.id,
-        )
-
-
-async def auto_link_activity_to_session(
-    session: AsyncSession, activity: EnduranceActivity
-) -> None:
-    """On endurance sync, check if a RockClimbing activity matches a session."""
-    if activity.type != "RockClimbing":
-        return
-
-    result = await session.exec(
-        select(ClimbingSession).where(
-            ClimbingSession.date == activity.date,
-            ClimbingSession.linked_activity_id.is_(None),  # type: ignore[union-attr]
-        )
-    )
-    sessions = list(result.all())
-    if len(sessions) == 1:
-        sessions[0].linked_activity_id = activity.id
-        session.add(sessions[0])
-    elif len(sessions) > 1:
-        # Pick session with most ascents
-        best = None
-        best_count = -1
-        for cs in sessions:
-            count_result = await session.exec(
-                select(func.count()).select_from(Ascent).where(
-                    Ascent.session_id == cs.id
-                )
-            )
-            count = count_result.one()
-            if count > best_count:
-                best = cs
-                best_count = count
-        if best:
-            best.linked_activity_id = activity.id
-            session.add(best)
-            logger.warning(
-                "Ambiguous session match on %s — linked to session %s (%d ascents)",
-                activity.date, best.id, best_count,
-            )
-
-
-async def list_climbing_sessions(
+async def list_climbing_activities(
     session: AsyncSession,
     *,
     date_from: date | None = None,
@@ -631,64 +557,59 @@ async def list_climbing_sessions(
     crag_id: int | None = None,
     offset: int = 0,
     limit: int = 20,
-) -> list[ClimbingSession]:
+) -> list[Activity]:
     stmt = (
-        select(ClimbingSession)
-        .options(
-            selectinload(ClimbingSession.ascents),  # type: ignore[arg-type]
-            selectinload(ClimbingSession.linked_activity),  # type: ignore[arg-type]
-        )
+        select(Activity)
+        .where(Activity.type == "climbing")
+        .options(selectinload(Activity.ascents))  # type: ignore[arg-type]
     )
     if date_from is not None:
-        stmt = stmt.where(ClimbingSession.date >= date_from)
+        stmt = stmt.where(Activity.date >= date_from)
     if date_to is not None:
-        stmt = stmt.where(ClimbingSession.date <= date_to)
+        stmt = stmt.where(Activity.date <= date_to)
     if crag_id is not None:
-        stmt = stmt.where(ClimbingSession.crag_id == crag_id)
-    stmt = stmt.order_by(ClimbingSession.date.desc()).offset(offset).limit(limit)
+        stmt = stmt.where(Activity.crag_id == crag_id)
+    stmt = stmt.order_by(Activity.date.desc()).offset(offset).limit(limit)
     result = await session.exec(stmt)
     return list(result.unique().all())
 
 
-async def get_climbing_session(
-    session: AsyncSession, session_id: int
-) -> ClimbingSession | None:
+async def get_climbing_activity(
+    session: AsyncSession, activity_id: int
+) -> Activity | None:
     stmt = (
-        select(ClimbingSession)
-        .options(
-            selectinload(ClimbingSession.ascents),  # type: ignore[arg-type]
-            selectinload(ClimbingSession.linked_activity),  # type: ignore[arg-type]
-        )
-        .where(ClimbingSession.id == session_id)
+        select(Activity)
+        .options(selectinload(Activity.ascents))  # type: ignore[arg-type]
+        .where(Activity.id == activity_id)
     )
     result = await session.exec(stmt)
     return result.first()
 
 
-async def cascade_session_crag(
+async def cascade_activity_crag(
     session: AsyncSession,
-    session_id: int,
+    activity_id: int,
     new_crag_id: int,
     new_crag_name: str,
 ) -> int:
-    """Bulk update crag_id and crag_name on all ascents in a session.
+    """Bulk update crag_id and crag_name on all ascents in an activity.
 
     Returns the number of ascents updated.
     """
     result = await session.execute(
         text(
             "UPDATE ascent SET crag_id = :crag_id, crag_name = :crag_name "
-            "WHERE session_id = :session_id"
+            "WHERE activity_id = :activity_id"
         ),
-        {"crag_id": new_crag_id, "crag_name": new_crag_name, "session_id": session_id},
+        {"crag_id": new_crag_id, "crag_name": new_crag_name, "activity_id": activity_id},
     )
     return result.rowcount or 0
 
 
-# ── Bulk Session Create ────────────────────────────────────────────────
+# ── Bulk Activity Create ──────────────────────────────────────────────
 
 
-async def create_climbing_session(
+async def create_climbing_activity(
     session: AsyncSession,
     *,
     crag_name: str,
@@ -697,9 +618,9 @@ async def create_climbing_session(
     venue_type: VenueType = VenueType.outdoor_crag,
     default_grade_sys: GradeSystem | None = None,
     ascents_data: list[dict],
-    session_notes: str | None = None,
+    activity_notes: str | None = None,
 ) -> dict:
-    """Bulk create a climbing session: crag + routes + ascents in one transaction.
+    """Bulk create a climbing activity: crag + routes + ascents in one transaction.
 
     ascents_data is a list of dicts, each with:
         route_name, grade, tick_type, date, tries?, rating?, notes?, partner?,
@@ -714,7 +635,7 @@ async def create_climbing_session(
         default_grade_sys=default_grade_sys,
     )
 
-    # Determine session date from first ascent
+    # Determine activity date from first ascent
     first_date = None
     for item in ascents_data:
         d = item["date"] if isinstance(item["date"], date) else date.fromisoformat(item["date"])
@@ -723,13 +644,13 @@ async def create_climbing_session(
     if first_date is None:
         first_date = date.today()
 
-    # Get or create the ClimbingSession record
-    cs, _ = await get_or_create_session(
+    # Get or create the Activity record
+    activity, _ = await get_or_create_climbing_activity(
         session,
-        session_date=first_date,
+        activity_date=first_date,
         crag_id=crag.id,  # type: ignore[arg-type]
         crag_name=crag.name,
-        notes=session_notes,
+        notes=activity_notes,
     )
 
     created_ascents = []
@@ -786,7 +707,7 @@ async def create_climbing_session(
             notes=item.get("notes"),
             partner=item.get("partner"),
             grade=item.get("grade"),
-            session_id=cs.id,
+            activity_id=activity.id,
             skip_dedup=True,  # already checked above
         )
         created_ascents.append(ascent)
@@ -794,7 +715,7 @@ async def create_climbing_session(
     await session.flush()
 
     return {
-        "session_id": cs.id,
+        "activity_id": activity.id,
         "crag_id": crag.id,
         "crag_name": crag.name,
         "crag_created": crag_created,
@@ -813,94 +734,63 @@ async def get_activity_feed(
     offset: int = 0,
     limit: int = 20,
 ) -> list[dict]:
-    """Unified activity feed: sessions + endurance activities ordered by date desc.
+    """Unified activity feed: all activities ordered by date desc.
 
-    Returns list of dicts with 'kind' discriminator.
+    feed_type can be "all", "climbing", or "endurance" (non-climbing).
     """
-    items: list[dict] = []
+    stmt = (
+        select(Activity)
+        .options(selectinload(Activity.ascents))  # type: ignore[arg-type]
+    )
 
-    if feed_type in ("all", "climbing"):
-        sessions = await list_climbing_sessions(
-            session, offset=0, limit=offset + limit
-        )
-        for cs in sessions:
-            items.append({
-                "kind": "session",
-                "date": cs.date.isoformat(),
-                "data": serialize_session(cs),
-            })
+    if feed_type == "climbing":
+        stmt = stmt.where(Activity.type == "climbing")
+    elif feed_type == "endurance":
+        stmt = stmt.where(Activity.type != "climbing")
 
-    if feed_type in ("all", "endurance"):
-        stmt = (
-            select(EnduranceActivity)
-            .order_by(EnduranceActivity.date.desc())
-            .offset(0)
-            .limit(offset + limit)
-        )
-        # Exclude RockClimbing activities that are linked to sessions
-        if feed_type == "all":
-            linked_ids = select(ClimbingSession.linked_activity_id).where(
-                ClimbingSession.linked_activity_id.isnot(None)  # type: ignore[union-attr]
-            )
-            stmt = stmt.where(EnduranceActivity.id.notin_(linked_ids))  # type: ignore[union-attr]
-        result = await session.exec(stmt)
-        for ea in result.all():
-            items.append({
-                "kind": "endurance",
-                "date": ea.date.isoformat(),
-                "data": {
-                    "id": ea.id,
-                    "date": ea.date.isoformat(),
-                    "type": ea.type,
-                    "name": ea.name,
-                    "duration_s": ea.duration_s,
-                    "distance_m": ea.distance_m,
-                    "elevation_gain_m": ea.elevation_gain_m,
-                    "avg_hr": ea.avg_hr,
-                    "max_hr": ea.max_hr,
-                    "training_load": ea.training_load,
-                },
-            })
+    stmt = stmt.order_by(Activity.date.desc()).offset(offset).limit(limit)
+    result = await session.exec(stmt)
+    activities = result.unique().all()
 
-    # Sort by date descending, then apply offset/limit
-    items.sort(key=lambda x: x["date"], reverse=True)
-    return items[offset : offset + limit]
+    return [serialize_activity(a) for a in activities]
 
 
-def serialize_session(cs: ClimbingSession) -> dict:
-    """Serialize a ClimbingSession with nested ascents and linked activity."""
-    linked = None
-    if cs.linked_activity:
-        linked = {
-            "id": cs.linked_activity.id,
-            "duration_s": cs.linked_activity.duration_s,
-            "avg_hr": cs.linked_activity.avg_hr,
-            "max_hr": cs.linked_activity.max_hr,
-        }
-
+def serialize_activity(activity: Activity) -> dict:
+    """Serialize an Activity with nested ascents (for climbing type)."""
     ascents = []
-    for a in (cs.ascents or []):
-        ascents.append({
-            "id": a.id,
-            "date": a.date.isoformat(),
-            "route_name": a.route_name,
-            "grade": a.grade,
-            "tick_type": a.tick_type.value,
-            "tries": a.tries,
-            "rating": a.rating,
-            "notes": a.notes,
-            "partner": a.partner,
-            "route_id": a.route_id,
-            "crag_id": a.crag_id,
-        })
+    if activity.type == "climbing":
+        for a in (activity.ascents or []):
+            ascents.append({
+                "id": a.id,
+                "date": a.date.isoformat(),
+                "route_name": a.route_name,
+                "grade": a.grade,
+                "tick_type": a.tick_type.value,
+                "tries": a.tries,
+                "rating": a.rating,
+                "notes": a.notes,
+                "partner": a.partner,
+                "route_id": a.route_id,
+                "crag_id": a.crag_id,
+            })
 
     return {
-        "id": cs.id,
-        "date": cs.date.isoformat(),
-        "crag_id": cs.crag_id,
-        "crag_name": cs.crag_name,
-        "notes": cs.notes,
-        "linked_activity": linked,
+        "id": activity.id,
+        "date": activity.date.isoformat(),
+        "type": activity.type,
+        "subtype": activity.subtype,
+        "name": activity.name,
+        "notes": activity.notes,
+        "source": activity.source.value,
+        "intervals_id": activity.intervals_id,
+        "duration_s": activity.duration_s,
+        "distance_m": activity.distance_m,
+        "elevation_gain_m": activity.elevation_gain_m,
+        "avg_hr": activity.avg_hr,
+        "max_hr": activity.max_hr,
+        "training_load": activity.training_load,
+        "crag_id": activity.crag_id,
+        "crag_name": activity.crag_name,
         "ascents": ascents,
         "ascent_count": len(ascents),
     }
@@ -910,25 +800,25 @@ def serialize_session(cs: ClimbingSession) -> dict:
 
 
 async def get_data_health(session: AsyncSession) -> dict:
-    """Return health stats for migration verification."""
-    total_sessions_r = await session.exec(
-        select(func.count()).select_from(ClimbingSession)
+    """Return health stats for verification."""
+    total_activities_r = await session.exec(
+        select(func.count()).select_from(Activity)
+    )
+    climbing_activities_r = await session.exec(
+        select(func.count()).select_from(Activity).where(Activity.type == "climbing")
     )
     total_ascents_r = await session.exec(
         select(func.count()).select_from(Ascent)
     )
     orphaned_r = await session.exec(
-        select(func.count()).select_from(Ascent).where(Ascent.session_id.is_(None))  # type: ignore[union-attr]
-    )
-    endurance_r = await session.exec(
-        select(func.count()).select_from(EnduranceActivity)
+        select(func.count()).select_from(Ascent).where(Ascent.activity_id.is_(None))  # type: ignore[union-attr]
     )
 
     return {
-        "total_sessions": total_sessions_r.one(),
+        "total_activities": total_activities_r.one(),
+        "climbing_activities": climbing_activities_r.one(),
         "total_ascents": total_ascents_r.one(),
         "orphaned_ascents": orphaned_r.one(),
-        "total_endurance_activities": endurance_r.one(),
     }
 
 
@@ -938,7 +828,7 @@ async def get_data_health(session: AsyncSession) -> dict:
 async def propagate_crag_name(
     session: AsyncSession, crag_id: int, new_name: str
 ) -> int:
-    """Update denormalized crag_name on all Ascent and ClimbingSession records for a crag.
+    """Update denormalized crag_name on all Ascent and Activity records for a crag.
 
     Returns the total number of rows updated.
     """
@@ -946,9 +836,9 @@ async def propagate_crag_name(
         text("UPDATE ascent SET crag_name = :name WHERE crag_id = :cid"),
         {"name": new_name, "cid": crag_id},
     )
-    session_result = await session.execute(
-        text("UPDATE climbing_session SET crag_name = :name WHERE crag_id = :cid"),
+    activity_result = await session.execute(
+        text("UPDATE activity SET crag_name = :name WHERE crag_id = :cid"),
         {"name": new_name, "cid": crag_id},
     )
-    total = (ascent_result.rowcount or 0) + (session_result.rowcount or 0)
+    total = (ascent_result.rowcount or 0) + (activity_result.rowcount or 0)
     return total

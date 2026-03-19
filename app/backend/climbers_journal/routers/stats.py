@@ -10,14 +10,14 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from climbers_journal.db import get_session
+from climbers_journal.models.activity import Activity
 from climbers_journal.models.climbing import (
     Ascent,
     Crag,
     TickType,
     VenueType,
 )
-from climbers_journal.models.endurance import EnduranceActivity
-from climbers_journal.services import climbing as svc
+from climbers_journal.services import activity as svc
 
 router = APIRouter(prefix="/stats", tags=["stats"])
 
@@ -79,7 +79,7 @@ class RecentEnduranceItem(BaseModel):
     date: datetime.date
     type: str
     name: str | None
-    duration_s: int
+    duration_s: int | None
     distance_m: float | None
     training_load: float | None
 
@@ -239,12 +239,16 @@ async def _build_endurance_stats(
     stmt = (
         select(
             func.count().label("count"),
-            func.coalesce(func.sum(EnduranceActivity.duration_s), 0).label("duration"),
-            func.coalesce(func.sum(EnduranceActivity.distance_m), 0).label("distance"),
-            func.coalesce(func.sum(EnduranceActivity.training_load), 0).label("load"),
+            func.coalesce(func.sum(Activity.duration_s), 0).label("duration"),
+            func.coalesce(func.sum(Activity.distance_m), 0).label("distance"),
+            func.coalesce(func.sum(Activity.training_load), 0).label("load"),
         )
-        .select_from(EnduranceActivity)
-        .where(EnduranceActivity.date >= week_ago, EnduranceActivity.date <= today)
+        .select_from(Activity)
+        .where(
+            Activity.type != "climbing",
+            Activity.date >= week_ago,
+            Activity.date <= today,
+        )
     )
     result = await session.exec(stmt)
     row = result.one()
@@ -288,9 +292,13 @@ async def _recent_endurance(
     date_to: datetime.date,
 ) -> list[RecentEnduranceItem]:
     stmt = (
-        select(EnduranceActivity)
-        .where(EnduranceActivity.date >= date_from, EnduranceActivity.date <= date_to)
-        .order_by(EnduranceActivity.date.desc())
+        select(Activity)
+        .where(
+            Activity.type != "climbing",
+            Activity.date >= date_from,
+            Activity.date <= date_to,
+        )
+        .order_by(Activity.date.desc())
         .limit(20)
     )
     result = await session.exec(stmt)
@@ -298,7 +306,7 @@ async def _recent_endurance(
         RecentEnduranceItem(
             id=a.id,
             date=a.date,
-            type=a.type,
+            type=a.subtype or a.type,
             name=a.name,
             duration_s=a.duration_s,
             distance_m=a.distance_m,
@@ -371,17 +379,21 @@ async def get_calendar(
     for row_date, venue_type in venue_result.all():
         venue_types_by_date.setdefault(row_date, set()).add(venue_type.value if hasattr(venue_type, 'value') else venue_type)
 
-    # Endurance: activities per day
+    # Endurance: non-climbing activities per day
     endurance_stmt = (
-        select(EnduranceActivity.date, EnduranceActivity.type, EnduranceActivity.duration_s)
-        .where(EnduranceActivity.date >= first_day, EnduranceActivity.date <= last_day)
-        .order_by(EnduranceActivity.date)
+        select(Activity.date, Activity.subtype, Activity.duration_s)
+        .where(
+            Activity.type != "climbing",
+            Activity.date >= first_day,
+            Activity.date <= last_day,
+        )
+        .order_by(Activity.date)
     )
     endurance_result = await session.exec(endurance_stmt)
     endurance_by_date: dict[datetime.date, list[dict]] = {}
-    for row_date, act_type, duration_s in endurance_result.all():
+    for row_date, act_subtype, duration_s in endurance_result.all():
         endurance_by_date.setdefault(row_date, []).append(
-            {"type": act_type, "duration_s": duration_s}
+            {"type": act_subtype, "duration_s": duration_s}
         )
 
     # Build response
@@ -426,7 +438,7 @@ class WeeklyAscentItem(BaseModel):
 class WeeklyEnduranceItem(BaseModel):
     type: str
     name: str | None
-    duration_s: int
+    duration_s: int | None
 
 
 class WeeklyDayEntry(BaseModel):
@@ -439,7 +451,7 @@ class WeeklyDayEntry(BaseModel):
 class WeeklyResponse(BaseModel):
     week_start: str  # YYYY-MM-DD (Monday)
     days: list[WeeklyDayEntry]
-    session_streak: int  # sessions logged this month
+    session_streak: int  # climbing days logged this month
 
 
 @router.get("/weekly", response_model=WeeklyResponse)
@@ -466,18 +478,22 @@ async def get_weekly(
         .order_by(Ascent.date)
     )
     ascent_result = await session.exec(ascent_stmt)
-    ascents_by_date: dict[datetime.date, list[Ascent]] = {}
+    ascents_by_date: dict[datetime.date, list] = {}
     for a in ascent_result.all():
         ascents_by_date.setdefault(a.date, []).append(a)
 
-    # Endurance activities for the week
+    # Non-climbing activities for the week
     endurance_stmt = (
-        select(EnduranceActivity)
-        .where(EnduranceActivity.date >= monday, EnduranceActivity.date <= sunday)
-        .order_by(EnduranceActivity.date)
+        select(Activity)
+        .where(
+            Activity.type != "climbing",
+            Activity.date >= monday,
+            Activity.date <= sunday,
+        )
+        .order_by(Activity.date)
     )
     endurance_result = await session.exec(endurance_stmt)
-    endurance_by_date: dict[datetime.date, list[EnduranceActivity]] = {}
+    endurance_by_date: dict[datetime.date, list[Activity]] = {}
     for e in endurance_result.all():
         endurance_by_date.setdefault(e.date, []).append(e)
 
@@ -500,7 +516,7 @@ async def get_weekly(
             ],
             endurance_activities=[
                 WeeklyEnduranceItem(
-                    type=e.type,
+                    type=e.subtype or e.type,
                     name=e.name,
                     duration_s=e.duration_s,
                 )
@@ -545,10 +561,10 @@ async def get_feed(
 
 
 class DataHealthResponse(BaseModel):
-    total_sessions: int
+    total_activities: int
+    climbing_activities: int
     total_ascents: int
     orphaned_ascents: int
-    total_endurance_activities: int
 
 
 @router.get("/health", response_model=DataHealthResponse)

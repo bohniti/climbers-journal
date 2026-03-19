@@ -3,7 +3,7 @@ from datetime import date
 import pytest
 
 from climbers_journal.models.climbing import TickType
-from climbers_journal.services.climbing import list_ascents
+from climbers_journal.services.activity import list_ascents
 from climbers_journal.services.import_csv import import_climbing_csv
 
 

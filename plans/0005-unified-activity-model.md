@@ -134,8 +134,8 @@ Update all backend code to use the unified Activity model.
 
 **Services:**
 
-- [ ] **Rename `services/climbing.py` → `services/activity.py`** (the file now handles all activity types, not just climbing)
-- [ ] **Refactor `services/activity.py`**:
+- [x] **Rename `services/climbing.py` → `services/activity.py`** (the file now handles all activity types, not just climbing)
+- [x] **Refactor `services/activity.py`**:
   - Replace all `ClimbingSession` references with `Activity` (filtered by `type == "climbing"`)
   - `get_or_create_session()` → `get_or_create_climbing_activity()`: creates `Activity(type="climbing", subtype="RockClimbing", ...)`
   - `list_climbing_sessions()` → `list_climbing_activities()`: filter `Activity.type == "climbing"`, eager load ascents
@@ -146,7 +146,7 @@ Update all backend code to use the unified Activity model.
   - `get_activity_feed()`: simplify — single `SELECT` from `Activity` ordered by date, no union/dedup
   - `create_climbing_session()` → `create_climbing_activity()`: creates Activity + ascents
   - `get_data_health()`: update queries (activity_id instead of session_id)
-- [ ] **Refactor `services/sync.py`**:
+- [x] **Refactor `services/sync.py`**:
   - `_parse_activity()`: returns `Activity`-shaped dict with `type` (category) and `subtype` (Strava type)
   - `upsert_activity()`: upserts into `Activity` table by `intervals_id`
   - Remove `auto_link_activity_to_session()` import and calls
@@ -155,31 +155,31 @@ Update all backend code to use the unified Activity model.
 
 **Routers:**
 
-- [ ] **Refactor `routers/climbing.py`**:
+- [x] **Refactor `routers/climbing.py`**:
   - Keep existing URLs (`POST /sessions/climbing`, etc.), internally use Activity
   - Update request/response schemas: `session_id` → `activity_id` in responses
   - Include endurance fields in climbing response when present (duration, HR)
-- [ ] **Refactor `routers/sync.py`**:
+- [x] **Refactor `routers/sync.py`**:
   - `POST /sync/intervals` → upserts into `Activity`
   - `GET /activities` → returns all activities (optional type filter)
   - `PUT /activities/{id}` → update any activity (expand editable fields: name, notes, crag_id for climbing)
   - Update `ActivityResponse` schema to include climbing fields (crag_id, crag_name, ascent_count)
-- [ ] **Refactor `routers/stats.py`**:
+- [x] **Refactor `routers/stats.py`**:
   - Replace `EnduranceActivity` queries with `Activity`
   - Replace `ClimbingSession` queries with `Activity.type == "climbing"`
   - Feed endpoint: single query on `Activity`, no union/dedup
   - Weekly stats: query `Activity` grouped by type
   - Calendar: query `Activity`
-- [ ] **Refactor `routers/import_csv.py`**:
+- [x] **Refactor `routers/import_csv.py`**:
   - CSV import creates `Activity(type="climbing", source="csv_import")`
 
 **LLM Tools:**
 
-- [ ] **Refactor `tools/journal.py`**:
+- [x] **Refactor `tools/journal.py`**:
   - Replace `ClimbingSession` with `Activity`
   - `get_sessions` tool: query `Activity.type == "climbing"`
   - `get_training_overview`: query `Activity` for all types
-- [ ] **Refactor `tools/record.py`**:
+- [x] **Refactor `tools/record.py`**:
   - `parse_climbing_session`: creates draft that becomes `Activity(type="climbing")`
 
 **Files:** `app/backend/climbers_journal/services/climbing.py` (→ `services/activity.py`), `app/backend/climbers_journal/services/sync.py`, `app/backend/climbers_journal/routers/climbing.py`, `app/backend/climbers_journal/routers/sync.py`, `app/backend/climbers_journal/routers/stats.py`, `app/backend/climbers_journal/routers/import_csv.py`, `app/backend/climbers_journal/tools/journal.py`, `app/backend/climbers_journal/tools/record.py`
