@@ -188,22 +188,22 @@ Update all backend code to use the unified Activity model.
 
 Update all tests to use the unified model.
 
-- [ ] **Update `test_climbing.py`**:
+- [x] **Update `test_climbing.py`**:
   - Replace `ClimbingSession` fixtures with `Activity(type="climbing")`
   - Update assertions: `session_id` → `activity_id`
   - Test `create_climbing_activity()`, crag cascade, unified feed
-- [ ] **Update `test_sync.py`**:
+- [x] **Update `test_sync.py`**:
   - Replace `EnduranceActivity` fixtures with `Activity`
   - Remove auto-link tests (concept no longer exists)
   - Test sync creates Activity with correct type/subtype
-- [ ] **Update `test_journal_tools.py`**: replace model fixtures
-- [ ] **Update `test_stats.py`**: replace model fixtures
-- [ ] **Add `test_sport_category()`**: verify all known Strava types map to correct category
-- [ ] **Add `test_serialize_activity()`**: verify unified serializer returns correct shape:
+- [x] **Update `test_journal_tools.py`**: replace model fixtures
+- [x] **Update `test_stats.py`**: replace model fixtures
+- [x] **Add `test_sport_category()`**: verify all known Strava types map to correct category
+- [x] **Add `test_serialize_activity()`**: verify unified serializer returns correct shape:
   - Climbing activity with ascents → includes `ascents`, `crag_name`, `crag_id`
   - Endurance activity → includes `duration_s`, `avg_hr`, `ascents: []`
   - Merged activity (climbing + HR data) → includes both sets of fields
-- [ ] **Verify**: `cd app/backend && uv run pytest` passes
+- [x] **Verify**: `cd app/backend && uv run pytest` passes (140 tests)
 
 **Files:** `app/backend/tests/test_climbing.py`, `app/backend/tests/test_sync.py`, `app/backend/tests/test_journal_tools.py`, `app/backend/tests/test_stats.py`
 
