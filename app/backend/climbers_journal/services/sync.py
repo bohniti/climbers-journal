@@ -217,7 +217,10 @@ async def update_activity(
         new_crag_id = updates["crag_id"]
         if new_crag_id is not None:
             crag = await session.get(Crag, new_crag_id)
-            if crag is not None:
+            if crag is None:
+                # Crag not found — skip the entire crag_id update
+                del updates["crag_id"]
+            else:
                 updates["crag_name"] = crag.name
                 # Cascade to ascents if this is a climbing activity
                 if activity.type == "climbing":
