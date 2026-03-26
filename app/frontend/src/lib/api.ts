@@ -210,16 +210,7 @@ export interface CragStatsResponse {
   } | null;
 }
 
-export interface CragSessionResponse {
-  id: number;
-  date: string;
-  crag_id: number;
-  crag_name: string | null;
-  notes: string | null;
-  linked_activity: FeedLinkedActivity | null;
-  ascents: FeedSessionAscent[];
-  ascent_count: number;
-}
+export type CragSessionResponse = Activity;
 
 export interface CragCreateRequest {
   name: string;
@@ -375,23 +366,24 @@ export async function updateAscent(
   return res.json();
 }
 
-export interface SessionUpdateRequest {
+export interface ActivityUpdateRequest {
   crag_id?: number;
   notes?: string | null;
+  name?: string | null;
 }
 
-export async function updateSession(
-  sessionId: number,
-  data: SessionUpdateRequest
-): Promise<CragSessionResponse> {
-  const res = await fetch(`${API_BASE}/sessions/climbing/${sessionId}`, {
+export async function updateActivity(
+  activityId: number,
+  data: ActivityUpdateRequest
+): Promise<Activity> {
+  const res = await fetch(`${API_BASE}/activities/${activityId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Failed to update session (${res.status}): ${text}`);
+    throw new Error(`Failed to update activity (${res.status}): ${text}`);
   }
   return res.json();
 }
@@ -552,7 +544,7 @@ export async function fetchWeekly(weekStart?: string): Promise<WeeklyData> {
 
 // ── Unified Feed ─────────────────────────────────────────────────────
 
-export interface FeedSessionAscent {
+export interface ActivityAscent {
   id: number;
   date: string;
   route_name: string | null;
@@ -566,27 +558,26 @@ export interface FeedSessionAscent {
   crag_id: number;
 }
 
-export interface FeedLinkedActivity {
-  id: number;
-  duration_s: number;
-  avg_hr: number | null;
-  max_hr: number | null;
-}
-
-export interface FeedSessionData {
+export interface Activity {
   id: number;
   date: string;
-  crag_id: number;
-  crag_name: string | null;
+  type: string;
+  subtype: string | null;
+  name: string | null;
   notes: string | null;
-  linked_activity: FeedLinkedActivity | null;
-  ascents: FeedSessionAscent[];
+  source: string;
+  intervals_id: string | null;
+  duration_s: number | null;
+  distance_m: number | null;
+  elevation_gain_m: number | null;
+  avg_hr: number | null;
+  max_hr: number | null;
+  training_load: number | null;
+  crag_id: number | null;
+  crag_name: string | null;
+  ascents: ActivityAscent[];
   ascent_count: number;
 }
-
-export type FeedItem =
-  | { kind: "session"; date: string; data: FeedSessionData }
-  | { kind: "endurance"; date: string; data: ActivityResponse };
 
 export interface FeedFilters {
   type?: "all" | "climbing" | "endurance";
@@ -596,7 +587,7 @@ export interface FeedFilters {
 
 export async function fetchFeed(
   filters: FeedFilters = {}
-): Promise<FeedItem[]> {
+): Promise<Activity[]> {
   const params = new URLSearchParams();
   if (filters.type) params.set("type", filters.type);
   if (filters.offset != null) params.set("offset", String(filters.offset));
@@ -610,23 +601,7 @@ export async function fetchFeed(
   return res.json();
 }
 
-// ── Activities (Endurance) ────────────────────────────────────────────
-
-export interface ActivityResponse {
-  id: number;
-  intervals_id: string;
-  date: string;
-  type: string;
-  name: string | null;
-  duration_s: number;
-  distance_m: number | null;
-  elevation_gain_m: number | null;
-  avg_hr: number | null;
-  max_hr: number | null;
-  training_load: number | null;
-  intensity: number | null;
-  source: string;
-}
+// ── Activities ────────────────────────────────────────────────────────
 
 export interface ActivityFilters {
   activity_type?: string;
@@ -638,7 +613,7 @@ export interface ActivityFilters {
 
 export async function listActivities(
   filters: ActivityFilters = {}
-): Promise<ActivityResponse[]> {
+): Promise<Activity[]> {
   const params = new URLSearchParams();
   if (filters.activity_type) params.set("activity_type", filters.activity_type);
   if (filters.date_from) params.set("date_from", filters.date_from);

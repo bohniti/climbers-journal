@@ -7,12 +7,14 @@ import httpx
 import pytest
 from sqlmodel import select
 
-from climbers_journal.models.endurance import ActivitySource, EnduranceActivity
+from climbers_journal.models.activity import Activity, ActivitySource
+from climbers_journal.models.climbing import Crag, GradeSystem, VenueType, normalize_name
 from climbers_journal.services.sync import (
     _month_ranges,
     _parse_activity,
     list_activities,
     sync_activities,
+    update_activity,
     upsert_activity,
 )
 
@@ -55,7 +57,8 @@ class TestParseActivity:
         result = _parse_activity(raw)
         assert result["intervals_id"] == "i12345"
         assert result["date"] == date(2026, 3, 10)
-        assert result["type"] == "Run"
+        assert result["type"] == "run"
+        assert result["subtype"] == "Run"
         assert result["name"] == "Morning Run"
         assert result["duration_s"] == 3600
         assert result["distance_m"] == 10000.0
@@ -71,6 +74,8 @@ class TestParseActivity:
         raw = {"id": "i999", "type": "Ride", "moving_time": 7200}
         result = _parse_activity(raw)
         assert result["intervals_id"] == "i999"
+        assert result["type"] == "ride"
+        assert result["subtype"] == "Ride"
         assert result["duration_s"] == 7200
         assert result["distance_m"] is None
         assert result["avg_hr"] is None
@@ -83,7 +88,8 @@ def _make_activity_data(**overrides) -> dict:
     defaults = {
         "intervals_id": "i100",
         "date": date(2026, 3, 10),
-        "type": "Run",
+        "type": "run",
+        "subtype": "Run",
         "name": "Test Run",
         "duration_s": 3600,
         "distance_m": 10000.0,
@@ -107,7 +113,7 @@ class TestUpsertActivity:
         await session.flush()
         assert created is True
         assert activity.intervals_id == "i100"
-        assert activity.type == "Run"
+        assert activity.type == "run"
         assert activity.duration_s == 3600
 
     @pytest.mark.asyncio
@@ -133,7 +139,7 @@ class TestUpsertActivity:
         await upsert_activity(session, data)
         await session.flush()
 
-        result = await session.exec(select(EnduranceActivity))
+        result = await session.exec(select(Activity))
         activities = list(result.all())
         assert len(activities) == 1
 
@@ -146,23 +152,23 @@ class TestListActivities:
 
     @pytest.mark.asyncio
     async def test_list_with_filters(self, session):
-        run = _make_activity_data(intervals_id="r1", type="Run", date=date(2026, 3, 10))
-        ride = _make_activity_data(intervals_id="r2", type="Ride", date=date(2026, 3, 11))
+        run = _make_activity_data(intervals_id="r1", type="run", subtype="Run", date=date(2026, 3, 10))
+        ride = _make_activity_data(intervals_id="r2", type="ride", subtype="Ride", date=date(2026, 3, 11))
         await upsert_activity(session, run)
         await upsert_activity(session, ride)
         await session.flush()
 
         # Filter by type
-        runs = await list_activities(session, activity_type="Run")
+        runs = await list_activities(session, activity_type="run")
         assert len(runs) == 1
-        assert runs[0].type == "Run"
+        assert runs[0]["type"] == "run"
 
         # Filter by date range
         result = await list_activities(
             session, date_from=date(2026, 3, 11), date_to=date(2026, 3, 11)
         )
         assert len(result) == 1
-        assert result[0].type == "Ride"
+        assert result[0]["type"] == "ride"
 
     @pytest.mark.asyncio
     async def test_list_pagination(self, session):
@@ -181,7 +187,48 @@ class TestListActivities:
         assert len(page2) == 2
 
         # Date desc ordering: first page should have later dates
-        assert page1[0].date > page2[0].date
+        assert page1[0]["date"] > page2[0]["date"]
+
+
+class TestUpdateActivity:
+    @pytest.mark.asyncio
+    async def test_update_name_and_notes(self, session):
+        data = _make_activity_data()
+        activity, _ = await upsert_activity(session, data)
+        await session.flush()
+
+        updated = await update_activity(
+            session, activity.id, name="New Name", notes="Some notes"
+        )
+        assert updated is not None
+        assert updated.name == "New Name"
+        assert updated.notes == "Some notes"
+
+    @pytest.mark.asyncio
+    async def test_update_not_found(self, session):
+        result = await update_activity(session, 99999, name="nope")
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_update_crag_id_denormalizes_name(self, session):
+        """Changing crag_id should also update crag_name."""
+        crag = Crag(
+            name="Test Crag",
+            name_normalized=normalize_name("Test Crag"),
+            venue_type=VenueType.outdoor_crag,
+            default_grade_sys=GradeSystem.french,
+        )
+        session.add(crag)
+        await session.flush()
+
+        data = _make_activity_data(type="climbing", subtype="RockClimbing")
+        activity, _ = await upsert_activity(session, data)
+        await session.flush()
+
+        updated = await update_activity(session, activity.id, crag_id=crag.id)
+        assert updated is not None
+        assert updated.crag_id == crag.id
+        assert updated.crag_name == "Test Crag"
 
 
 class TestSyncActivities:

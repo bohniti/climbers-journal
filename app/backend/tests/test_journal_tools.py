@@ -17,7 +17,7 @@ from climbers_journal.models.climbing import (
     VenueType,
     normalize_name,
 )
-from climbers_journal.models.endurance import ActivitySource, EnduranceActivity
+from climbers_journal.models.activity import Activity, ActivitySource
 from climbers_journal.tools.journal import handle
 
 
@@ -142,10 +142,11 @@ async def _seed_climbing_data(session, today):
 async def _seed_endurance_data(session, today):
     """Create sample endurance activities."""
     activities = [
-        EnduranceActivity(
+        Activity(
             intervals_id="act-1",
             date=today - timedelta(days=1),
-            type="Run",
+            type="run",
+            subtype="Run",
             name="Morning Run",
             duration_s=3600,
             distance_m=10000,
@@ -153,10 +154,11 @@ async def _seed_endurance_data(session, today):
             training_load=80.0,
             source=ActivitySource.intervals_icu,
         ),
-        EnduranceActivity(
+        Activity(
             intervals_id="act-2",
             date=today - timedelta(days=3),
-            type="Ride",
+            type="ride",
+            subtype="Ride",
             name="Easy Ride",
             duration_s=5400,
             distance_m=30000,

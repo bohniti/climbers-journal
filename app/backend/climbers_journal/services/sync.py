@@ -1,15 +1,16 @@
-"""Sync service — pull endurance activities from intervals.icu into local DB."""
+"""Sync service — pull activities from intervals.icu into local DB."""
 
 import asyncio
 import logging
 from datetime import date, timedelta
 
+from sqlalchemy import func as sa_func, text
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from climbers_journal.models.endurance import ActivitySource, EnduranceActivity
+from climbers_journal.models.activity import Activity, ActivitySource, sport_category
+from climbers_journal.models.climbing import Ascent, Crag
 from climbers_journal.services import intervals
-from climbers_journal.services.climbing import auto_link_activity_to_session
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ def _month_ranges(oldest: date, newest: date) -> list[tuple[date, date]]:
 
 
 def _parse_activity(raw: dict) -> dict:
-    """Extract EnduranceActivity fields from an intervals.icu activity payload."""
+    """Extract Activity fields from an intervals.icu activity payload."""
     activity_date = raw.get("start_date_local", raw.get("date", ""))
     if isinstance(activity_date, str) and len(activity_date) >= 10:
         activity_date = activity_date[:10]  # YYYY-MM-DD
@@ -38,12 +39,16 @@ def _parse_activity(raw: dict) -> dict:
     elif isinstance(activity_date, str):
         activity_date = date.today()
 
+    subtype = raw.get("type", "Unknown")
+    category = sport_category(subtype)
+
     return {
         "intervals_id": str(raw["id"]),
         "date": activity_date,
-        "type": raw.get("type", "Unknown"),
+        "type": category,
+        "subtype": subtype,
         "name": raw.get("name"),
-        "duration_s": int(raw.get("moving_time", raw.get("elapsed_time", 0))),
+        "duration_s": int(t) if (t := raw.get("moving_time", raw.get("elapsed_time"))) is not None else None,
         "distance_m": raw.get("distance"),
         "elevation_gain_m": raw.get("total_elevation_gain"),
         "avg_hr": raw.get("average_heartrate"),
@@ -74,14 +79,14 @@ async def _fetch_with_retry(oldest: str, newest: str, max_retries: int = 3) -> l
                 raise
 
 
-async def upsert_activity(session: AsyncSession, data: dict) -> tuple[EnduranceActivity, bool]:
-    """Insert or update an endurance activity by intervals_id.
+async def upsert_activity(session: AsyncSession, data: dict) -> tuple[Activity, bool]:
+    """Insert or update an activity by intervals_id.
 
     Returns (activity, created) where created is True if newly inserted.
     """
     result = await session.exec(
-        select(EnduranceActivity).where(
-            EnduranceActivity.intervals_id == data["intervals_id"]
+        select(Activity).where(
+            Activity.intervals_id == data["intervals_id"]
         )
     )
     existing = result.first()
@@ -94,7 +99,7 @@ async def upsert_activity(session: AsyncSession, data: dict) -> tuple[EnduranceA
         session.add(existing)
         return existing, False
 
-    activity = EnduranceActivity(**data)
+    activity = Activity(**data)
     session.add(activity)
     return activity, True
 
@@ -140,8 +145,6 @@ async def sync_activities(
                 activity, created = await upsert_activity(session, data)
                 if created:
                     chunk_created += 1
-                    # Auto-link RockClimbing activities to climbing sessions
-                    await auto_link_activity_to_session(session, activity)
                 else:
                     chunk_updated += 1
 
@@ -181,16 +184,79 @@ async def list_activities(
     date_to: date | None = None,
     offset: int = 0,
     limit: int = 50,
-) -> list[EnduranceActivity]:
-    """List endurance activities with optional filters and pagination."""
-    stmt = select(EnduranceActivity)
-    if activity_type is not None:
-        stmt = stmt.where(EnduranceActivity.type == activity_type)
-    if date_from is not None:
-        stmt = stmt.where(EnduranceActivity.date >= date_from)
-    if date_to is not None:
-        stmt = stmt.where(EnduranceActivity.date <= date_to)
-    result = await session.exec(
-        stmt.order_by(EnduranceActivity.date.desc()).offset(offset).limit(limit)  # type: ignore[union-attr]
+) -> list[dict]:
+    """List activities with optional filters, pagination, and ascent_count."""
+    ascent_count_sub = (
+        select(
+            Ascent.activity_id,
+            sa_func.count(Ascent.id).label("ascent_count"),
+        )
+        .group_by(Ascent.activity_id)
+        .subquery()
     )
-    return list(result.all())
+    stmt = (
+        select(Activity, sa_func.coalesce(ascent_count_sub.c.ascent_count, 0).label("ascent_count"))
+        .outerjoin(ascent_count_sub, Activity.id == ascent_count_sub.c.activity_id)
+    )
+    if activity_type is not None:
+        stmt = stmt.where(Activity.type == activity_type)
+    if date_from is not None:
+        stmt = stmt.where(Activity.date >= date_from)
+    if date_to is not None:
+        stmt = stmt.where(Activity.date <= date_to)
+    stmt = stmt.order_by(Activity.date.desc()).offset(offset).limit(limit)
+    result = await session.execute(stmt)
+    rows = result.all()
+    return [
+        {**activity.__dict__, "ascent_count": count}
+        for activity, count in rows
+    ]
+
+
+async def update_activity(
+    session: AsyncSession,
+    activity_id: int,
+    **updates: object,
+) -> Activity | None:
+    """Update editable fields on any Activity. Returns None if not found.
+
+    When crag_id changes, automatically denormalizes crag_name and cascades
+    to ascents for climbing-type activities.
+    """
+    EDITABLE_FIELDS = {"name", "notes", "crag_id", "crag_name"}
+
+    activity = await session.get(Activity, activity_id)
+    if activity is None:
+        return None
+
+    # Handle crag_id change: denormalize crag_name + cascade to ascents
+    if "crag_id" in updates and updates["crag_id"] != activity.crag_id:
+        new_crag_id = updates["crag_id"]
+        if new_crag_id is not None:
+            crag = await session.get(Crag, new_crag_id)
+            if crag is None:
+                # Crag not found — skip the entire crag_id update
+                del updates["crag_id"]
+            else:
+                updates["crag_name"] = crag.name
+                # Cascade to ascents if this is a climbing activity
+                if activity.type == "climbing":
+                    await session.execute(
+                        text(
+                            "UPDATE ascent SET crag_id = :crag_id, crag_name = :crag_name "
+                            "WHERE activity_id = :activity_id"
+                        ),
+                        {"crag_id": new_crag_id, "crag_name": crag.name, "activity_id": activity_id},
+                    )
+        else:
+            updates["crag_name"] = None
+            # Note: ascent.crag_id is NOT NULL, so we skip cascade when
+            # clearing crag on the activity — ascents keep their crag.
+
+    for key, value in updates.items():
+        if key in EDITABLE_FIELDS:
+            setattr(activity, key, value)
+
+    session.add(activity)
+    await session.flush()
+    return activity

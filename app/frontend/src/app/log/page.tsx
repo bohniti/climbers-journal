@@ -4,10 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   fetchFeed,
-  type FeedItem,
-  type FeedSessionData,
-  type FeedSessionAscent,
-  type ActivityResponse,
+  type Activity,
+  type ActivityAscent,
 } from "@/lib/api";
 import {
   TICK_COLORS,
@@ -18,7 +16,7 @@ import {
   sportCategory,
 } from "@/lib/constants";
 import ActivityIcon from "@/components/ActivityIcon";
-import SessionEditModal from "@/components/SessionEditModal";
+import ActivityEditModal from "@/components/ActivityEditModal";
 import AscentEditModal from "@/components/AscentEditModal";
 
 // ── Filter state ──────────────────────────────────────────────────────
@@ -34,7 +32,7 @@ const PAGE_SIZE = 20;
 // ── Component ─────────────────────────────────────────────────────────
 
 export default function LogPage() {
-  const [items, setItems] = useState<FeedItem[]>([]);
+  const [items, setItems] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
@@ -183,11 +181,11 @@ export default function LogPage() {
           )}
 
           <div className="space-y-2">
-            {items.map((item) =>
-              item.kind === "session" ? (
-                <ClimbingSessionCard
-                  key={`s-${item.data.id}`}
-                  session={item.data}
+            {items.map((activity) =>
+              activity.type === "climbing" ? (
+                <ClimbingActivityCard
+                  key={`c-${activity.id}`}
+                  activity={activity}
                   onRefresh={() => {
                     setOffset(0);
                     fetchItems(0, false);
@@ -195,8 +193,8 @@ export default function LogPage() {
                 />
               ) : (
                 <EnduranceCard
-                  key={`e-${item.data.id}`}
-                  activity={item.data}
+                  key={`e-${activity.id}`}
+                  activity={activity}
                 />
               )
             )}
@@ -224,21 +222,21 @@ export default function LogPage() {
   );
 }
 
-// ── Climbing Session Card ─────────────────────────────────────────────
+// ── Climbing Activity Card ───────────────────────────────────────────
 
 type ExpandLevel = "collapsed" | "summary" | "routes";
 
-function ClimbingSessionCard({
-  session,
+function ClimbingActivityCard({
+  activity,
   onRefresh,
 }: {
-  session: FeedSessionData;
+  activity: Activity;
   onRefresh: () => void;
 }) {
   const defaultLevel: ExpandLevel =
-    session.ascent_count > 10 ? "summary" : "collapsed";
+    activity.ascent_count > 10 ? "summary" : "collapsed";
   const [expand, setExpand] = useState<ExpandLevel>(defaultLevel);
-  const [editSession, setEditSession] = useState(false);
+  const [editActivity, setEditActivity] = useState(false);
 
   const cycleExpand = () => {
     if (expand === "collapsed") setExpand("summary");
@@ -247,7 +245,7 @@ function ClimbingSessionCard({
   };
 
   // Compute stats
-  const ascents = session.ascents;
+  const ascents = activity.ascents;
   const grades = ascents
     .map((a) => a.grade)
     .filter((g): g is string => g != null)
@@ -268,9 +266,6 @@ function ClimbingSessionCard({
     tickBreakdown[a.tick_type] = (tickBreakdown[a.tick_type] || 0) + 1;
   }
 
-  // Duration from linked watch
-  const linkedDuration = session.linked_activity?.duration_s;
-
   return (
     <div className="rounded-xl border border-slate-700 bg-slate-900 text-left transition-colors hover:border-slate-600">
       {/* Collapsed header — always visible */}
@@ -286,23 +281,23 @@ function ClimbingSessionCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <Link
-                href={`/crags/${session.crag_id}`}
+                href={`/crags/${activity.crag_id}`}
                 onClick={(e) => e.stopPropagation()}
                 className="truncate text-sm font-medium text-slate-100 hover:text-emerald-400"
               >
-                {session.crag_name ?? "Unknown crag"}
+                {activity.crag_name ?? "Unknown crag"}
               </Link>
-              {linkedDuration != null && (
+              {activity.duration_s != null && (
                 <span className="shrink-0 rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">
-                  {formatDuration(linkedDuration)}
+                  {formatDuration(activity.duration_s)}
                 </span>
               )}
             </div>
             <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-400">
-              <span>{formatDate(session.date)}</span>
+              <span>{formatDate(activity.date)}</span>
               <span>&middot;</span>
               <span>
-                {session.ascent_count} route{session.ascent_count !== 1 ? "s" : ""}
+                {activity.ascent_count} route{activity.ascent_count !== 1 ? "s" : ""}
               </span>
               {hardestGrade && (
                 <>
@@ -317,10 +312,10 @@ function ClimbingSessionCard({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              setEditSession(true);
+              setEditActivity(true);
             }}
             className="shrink-0 rounded-lg p-1.5 text-slate-500 hover:bg-slate-800 hover:text-slate-300"
-            title="Edit session"
+            title="Edit activity"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
@@ -347,7 +342,7 @@ function ClimbingSessionCard({
         <div className="border-t border-slate-800 px-4 py-2.5">
           <div className="flex items-center justify-between text-xs text-slate-400">
             <span>
-              {session.ascent_count} routes
+              {activity.ascent_count} routes
               {hardestGrade ? ` \u00B7 hardest ${hardestGrade}` : ""}
               {` \u00B7 ${sends.length} send${sends.length !== 1 ? "s" : ""}`}
               {attempts.length > 0
@@ -363,24 +358,24 @@ function ClimbingSessionCard({
             >
               {expand === "routes"
                 ? "Hide routes"
-                : `Show all ${session.ascent_count} routes`}
+                : `Show all ${activity.ascent_count} routes`}
             </button>
           </div>
 
-          {/* Linked watch data */}
-          {session.linked_activity && (
+          {/* HR data (now directly on the activity) */}
+          {(activity.avg_hr != null || activity.max_hr != null) && (
             <div className="mt-1.5 flex gap-3 text-[11px] text-slate-500">
-              {session.linked_activity.avg_hr != null && (
-                <span>Avg HR: {session.linked_activity.avg_hr} bpm</span>
+              {activity.avg_hr != null && (
+                <span>Avg HR: {activity.avg_hr} bpm</span>
               )}
-              {session.linked_activity.max_hr != null && (
-                <span>Max HR: {session.linked_activity.max_hr} bpm</span>
+              {activity.max_hr != null && (
+                <span>Max HR: {activity.max_hr} bpm</span>
               )}
             </div>
           )}
 
-          {session.notes && (
-            <p className="mt-1.5 text-xs text-slate-400">{session.notes}</p>
+          {activity.notes && (
+            <p className="mt-1.5 text-xs text-slate-400">{activity.notes}</p>
           )}
         </div>
       )}
@@ -394,13 +389,13 @@ function ClimbingSessionCard({
         </div>
       )}
 
-      {/* Session edit modal */}
-      {editSession && (
-        <SessionEditModal
-          session={session}
-          onClose={() => setEditSession(false)}
+      {/* Activity edit modal */}
+      {editActivity && (
+        <ActivityEditModal
+          activity={activity}
+          onClose={() => setEditActivity(false)}
           onSaved={() => {
-            setEditSession(false);
+            setEditActivity(false);
             onRefresh();
           }}
         />
@@ -413,7 +408,7 @@ function AscentRow({
   ascent,
   onRefresh,
 }: {
-  ascent: FeedSessionAscent;
+  ascent: ActivityAscent;
   onRefresh: () => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -472,7 +467,7 @@ function AscentRow({
 
 // ── Endurance Card ────────────────────────────────────────────────────
 
-function EnduranceCard({ activity }: { activity: ActivityResponse }) {
+function EnduranceCard({ activity }: { activity: Activity }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -490,9 +485,11 @@ function EnduranceCard({ activity }: { activity: ActivityResponse }) {
             <span className="truncate text-sm font-medium text-slate-100">
               {activity.name ?? activity.type}
             </span>
-            <span className="shrink-0 rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">
-              {formatDuration(activity.duration_s)}
-            </span>
+            {activity.duration_s != null && (
+              <span className="shrink-0 rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">
+                {formatDuration(activity.duration_s)}
+              </span>
+            )}
             {activity.distance_m != null && activity.distance_m > 0 && (
               <span className="shrink-0 text-xs text-slate-400">
                 {formatDistance(activity.distance_m)}

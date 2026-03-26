@@ -23,3 +23,4 @@
 | PROJ-18 | Crag browser & detail pages | done | [0003](../plans/0003-activities-overhaul.md) |
 | PROJ-19 | Icon system refresh (PNG icons) | done | [0004](../plans/0004-edit-icons-dashboard-vitals.md) |
 | PROJ-20 | Session & ascent edit UI | done | [0004](../plans/0004-edit-icons-dashboard-vitals.md) |
+| PROJ-21 | Unified Activity model + backend refactor | done | [0005](../plans/0005-unified-activity-model.md) |
