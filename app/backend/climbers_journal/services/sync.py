@@ -4,13 +4,12 @@ import asyncio
 import logging
 from datetime import date, timedelta
 
-from sqlalchemy import text
-
+from sqlalchemy import func as sa_func, text
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from climbers_journal.models.activity import Activity, ActivitySource, sport_category
-from climbers_journal.models.climbing import Crag
+from climbers_journal.models.climbing import Ascent, Crag
 from climbers_journal.services import intervals
 
 logger = logging.getLogger(__name__)
@@ -185,19 +184,33 @@ async def list_activities(
     date_to: date | None = None,
     offset: int = 0,
     limit: int = 50,
-) -> list[Activity]:
-    """List activities with optional filters and pagination."""
-    stmt = select(Activity)
+) -> list[dict]:
+    """List activities with optional filters, pagination, and ascent_count."""
+    ascent_count_sub = (
+        select(
+            Ascent.activity_id,
+            sa_func.count(Ascent.id).label("ascent_count"),
+        )
+        .group_by(Ascent.activity_id)
+        .subquery()
+    )
+    stmt = (
+        select(Activity, sa_func.coalesce(ascent_count_sub.c.ascent_count, 0).label("ascent_count"))
+        .outerjoin(ascent_count_sub, Activity.id == ascent_count_sub.c.activity_id)
+    )
     if activity_type is not None:
         stmt = stmt.where(Activity.type == activity_type)
     if date_from is not None:
         stmt = stmt.where(Activity.date >= date_from)
     if date_to is not None:
         stmt = stmt.where(Activity.date <= date_to)
-    result = await session.exec(
-        stmt.order_by(Activity.date.desc()).offset(offset).limit(limit)  # type: ignore[union-attr]
-    )
-    return list(result.all())
+    stmt = stmt.order_by(Activity.date.desc()).offset(offset).limit(limit)
+    result = await session.execute(stmt)
+    rows = result.all()
+    return [
+        {**activity.__dict__, "ascent_count": count}
+        for activity, count in rows
+    ]
 
 
 async def update_activity(
@@ -237,15 +250,8 @@ async def update_activity(
                     )
         else:
             updates["crag_name"] = None
-            # Cascade: clear crag on ascents if this is a climbing activity
-            if activity.type == "climbing":
-                await session.execute(
-                    text(
-                        "UPDATE ascent SET crag_id = NULL, crag_name = NULL "
-                        "WHERE activity_id = :activity_id"
-                    ),
-                    {"activity_id": activity_id},
-                )
+            # Note: ascent.crag_id is NOT NULL, so we skip cascade when
+            # clearing crag on the activity — ascents keep their crag.
 
     for key, value in updates.items():
         if key in EDITABLE_FIELDS:

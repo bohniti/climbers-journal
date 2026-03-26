@@ -6,8 +6,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from sqlalchemy import func as sa_func
+
 from climbers_journal.db import get_session
 from climbers_journal.models.activity import Activity, ActivitySource
+from climbers_journal.models.climbing import Ascent
 from climbers_journal.services import sync as sync_svc
 
 router = APIRouter(tags=["sync"])
@@ -106,10 +109,20 @@ async def update_activity(
         activity = await session.get(Activity, activity_id)
         if activity is None:
             raise HTTPException(status_code=404, detail="Activity not found.")
-        return activity
+        from sqlmodel import select
+        count_result = await session.exec(
+            select(sa_func.count(Ascent.id)).where(Ascent.activity_id == activity_id)
+        )
+        return {**activity.__dict__, "ascent_count": count_result.one()}
 
     activity = await sync_svc.update_activity(session, activity_id, **updates)
     if activity is None:
         raise HTTPException(status_code=404, detail="Activity not found.")
     await session.commit()
-    return activity
+    # Compute ascent_count for the response
+    from sqlmodel import select
+    count_result = await session.exec(
+        select(sa_func.count(Ascent.id)).where(Ascent.activity_id == activity_id)
+    )
+    ascent_count = count_result.one()
+    return {**activity.__dict__, "ascent_count": ascent_count}

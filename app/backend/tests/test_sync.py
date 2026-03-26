@@ -161,14 +161,14 @@ class TestListActivities:
         # Filter by type
         runs = await list_activities(session, activity_type="run")
         assert len(runs) == 1
-        assert runs[0].type == "run"
+        assert runs[0]["type"] == "run"
 
         # Filter by date range
         result = await list_activities(
             session, date_from=date(2026, 3, 11), date_to=date(2026, 3, 11)
         )
         assert len(result) == 1
-        assert result[0].type == "ride"
+        assert result[0]["type"] == "ride"
 
     @pytest.mark.asyncio
     async def test_list_pagination(self, session):
@@ -187,7 +187,7 @@ class TestListActivities:
         assert len(page2) == 2
 
         # Date desc ordering: first page should have later dates
-        assert page1[0].date > page2[0].date
+        assert page1[0]["date"] > page2[0]["date"]
 
 
 class TestUpdateActivity:
