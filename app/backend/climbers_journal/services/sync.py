@@ -4,6 +4,8 @@ import asyncio
 import logging
 from datetime import date, timedelta
 
+from sqlalchemy import text
+
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -47,7 +49,7 @@ def _parse_activity(raw: dict) -> dict:
         "type": category,
         "subtype": subtype,
         "name": raw.get("name"),
-        "duration_s": int(raw.get("moving_time", raw.get("elapsed_time", 0))),
+        "duration_s": int(t) if (t := raw.get("moving_time", raw.get("elapsed_time"))) is not None else None,
         "distance_m": raw.get("distance"),
         "elevation_gain_m": raw.get("total_elevation_gain"),
         "avg_hr": raw.get("average_heartrate"),
@@ -208,6 +210,8 @@ async def update_activity(
     When crag_id changes, automatically denormalizes crag_name and cascades
     to ascents for climbing-type activities.
     """
+    EDITABLE_FIELDS = {"name", "notes", "crag_id", "crag_name"}
+
     activity = await session.get(Activity, activity_id)
     if activity is None:
         return None
@@ -224,7 +228,6 @@ async def update_activity(
                 updates["crag_name"] = crag.name
                 # Cascade to ascents if this is a climbing activity
                 if activity.type == "climbing":
-                    from sqlalchemy import text
                     await session.execute(
                         text(
                             "UPDATE ascent SET crag_id = :crag_id, crag_name = :crag_name "
@@ -234,9 +237,19 @@ async def update_activity(
                     )
         else:
             updates["crag_name"] = None
+            # Cascade: clear crag on ascents if this is a climbing activity
+            if activity.type == "climbing":
+                await session.execute(
+                    text(
+                        "UPDATE ascent SET crag_id = NULL, crag_name = NULL "
+                        "WHERE activity_id = :activity_id"
+                    ),
+                    {"activity_id": activity_id},
+                )
 
     for key, value in updates.items():
-        setattr(activity, key, value)
+        if key in EDITABLE_FIELDS:
+            setattr(activity, key, value)
 
     session.add(activity)
     await session.flush()

@@ -28,6 +28,7 @@ from climbers_journal.models.climbing import (
     TickType,
     VenueType,
 )
+from climbers_journal.models.activity import ActivitySource
 from climbers_journal.services.activity import (
     create_climbing_activity,
 )
@@ -222,6 +223,7 @@ async def import_climbing_csv(
                     crag_region=meta["region"],
                     venue_type=VenueType(meta["venue_type"]),
                     ascents_data=batch,
+                    source=ActivitySource.csv_import,
                 )
                 total_created += result["ascents_created"]
                 total_skipped += result["ascents_skipped"]

@@ -381,7 +381,7 @@ async def get_calendar(
 
     # Endurance: non-climbing activities per day
     endurance_stmt = (
-        select(Activity.date, Activity.subtype, Activity.duration_s)
+        select(Activity.date, func.coalesce(Activity.subtype, Activity.type), Activity.duration_s)
         .where(
             Activity.type != "climbing",
             Activity.date >= first_day,

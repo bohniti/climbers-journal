@@ -519,6 +519,7 @@ async def get_or_create_climbing_activity(
     crag_id: int,
     crag_name: str | None = None,
     notes: str | None = None,
+    source: ActivitySource = ActivitySource.manual,
 ) -> tuple[Activity, bool]:
     """Get existing climbing activity for (date, crag_id) or create new one.
 
@@ -539,7 +540,7 @@ async def get_or_create_climbing_activity(
         date=activity_date,
         type="climbing",
         subtype="RockClimbing",
-        source=ActivitySource.manual,
+        source=source,
         crag_id=crag_id,
         crag_name=crag_name,
         notes=notes,
@@ -580,7 +581,7 @@ async def get_climbing_activity(
     stmt = (
         select(Activity)
         .options(selectinload(Activity.ascents))  # type: ignore[arg-type]
-        .where(Activity.id == activity_id)
+        .where(Activity.id == activity_id, Activity.type == "climbing")
     )
     result = await session.exec(stmt)
     return result.first()
@@ -619,6 +620,7 @@ async def create_climbing_activity(
     default_grade_sys: GradeSystem | None = None,
     ascents_data: list[dict],
     activity_notes: str | None = None,
+    source: ActivitySource = ActivitySource.manual,
 ) -> dict:
     """Bulk create a climbing activity: crag + routes + ascents in one transaction.
 
@@ -651,6 +653,7 @@ async def create_climbing_activity(
         crag_id=crag.id,  # type: ignore[arg-type]
         crag_name=crag.name,
         notes=activity_notes,
+        source=source,
     )
 
     created_ascents = []
