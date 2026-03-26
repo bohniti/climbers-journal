@@ -1,28 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { updateSession, type FeedSessionData } from "@/lib/api";
+import { updateActivity, type Activity } from "@/lib/api";
 import CragCombobox from "@/components/CragCombobox";
 
-interface SessionEditModalProps {
-  session: FeedSessionData;
+interface ActivityEditModalProps {
+  activity: Activity;
   onClose: () => void;
   onSaved: () => void;
 }
 
-export default function SessionEditModal({
-  session,
+export default function ActivityEditModal({
+  activity,
   onClose,
   onSaved,
-}: SessionEditModalProps) {
-  const [notes, setNotes] = useState(session.notes ?? "");
+}: ActivityEditModalProps) {
+  const [notes, setNotes] = useState(activity.notes ?? "");
   const [newCragId, setNewCragId] = useState<number | null>(null);
   const [newCragName, setNewCragName] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmCrag, setConfirmCrag] = useState(false);
 
-  const cragChanged = newCragId != null && newCragId !== session.crag_id;
+  const isClimbing = activity.type === "climbing";
+  const cragChanged = newCragId != null && newCragId !== activity.crag_id;
 
   const handleSave = async () => {
     // If crag changed and not yet confirmed, show confirmation
@@ -37,10 +38,10 @@ export default function SessionEditModal({
     try {
       const data: Record<string, unknown> = {};
       if (cragChanged) data.crag_id = newCragId;
-      if (notes !== (session.notes ?? "")) data.notes = notes || null;
+      if (notes !== (activity.notes ?? "")) data.notes = notes || null;
 
       if (Object.keys(data).length > 0) {
-        await updateSession(session.id, data);
+        await updateActivity(activity.id, data);
       }
       onSaved();
     } catch (err) {
@@ -59,9 +60,9 @@ export default function SessionEditModal({
       }}
     >
       <div className="mx-4 w-full max-w-md rounded-xl border border-slate-700 bg-slate-900 p-5">
-        <h3 className="text-sm font-medium text-slate-100">Edit session</h3>
+        <h3 className="text-sm font-medium text-slate-100">Edit activity</h3>
         <p className="mt-0.5 text-xs text-slate-500">
-          {session.crag_name} &middot; {session.date}
+          {isClimbing ? activity.crag_name : activity.name ?? activity.type} &middot; {activity.date}
         </p>
 
         {error && (
@@ -70,26 +71,28 @@ export default function SessionEditModal({
           </div>
         )}
 
-        {/* Crag picker */}
-        <div className="mt-4">
-          <label className="mb-1 block text-xs font-medium text-slate-400">
-            Crag
-          </label>
-          <CragCombobox
-            value={newCragId ?? session.crag_id}
-            onChange={(id, name) => {
-              setNewCragId(id);
-              setNewCragName(name);
-              setConfirmCrag(false);
-            }}
-          />
-        </div>
+        {/* Crag picker — only for climbing activities */}
+        {isClimbing && activity.crag_id != null && (
+          <div className="mt-4">
+            <label className="mb-1 block text-xs font-medium text-slate-400">
+              Crag
+            </label>
+            <CragCombobox
+              value={newCragId ?? activity.crag_id}
+              onChange={(id, name) => {
+                setNewCragId(id);
+                setNewCragName(name);
+                setConfirmCrag(false);
+              }}
+            />
+          </div>
+        )}
 
         {/* Crag change confirmation */}
         {confirmCrag && cragChanged && (
           <div className="mt-2 rounded-lg border border-amber-800 bg-amber-950/40 px-3 py-2 text-xs text-amber-300">
-            Move {session.ascent_count} route
-            {session.ascent_count !== 1 ? "s" : ""} to{" "}
+            Move {activity.ascent_count} route
+            {activity.ascent_count !== 1 ? "s" : ""} to{" "}
             <span className="font-medium">{newCragName}</span>?
           </div>
         )}
@@ -104,7 +107,7 @@ export default function SessionEditModal({
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
             className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-emerald-600 outline-none"
-            placeholder="Session notes..."
+            placeholder="Notes..."
           />
         </div>
 

@@ -8,9 +8,7 @@ import {
   fetchFeed,
   type DashboardData,
   type GradePyramidEntry,
-  type FeedItem,
-  type FeedSessionData,
-  type ActivityResponse,
+  type Activity,
 } from "@/lib/api";
 import {
   TICK_COLORS,
@@ -35,7 +33,7 @@ export default function DashboardPage() {
   const [venueFilter, setVenueFilter] = useState<string>("");
   const [periodFilter, setPeriodFilter] = useState<string>("");
   const [pyramid, setPyramid] = useState<GradePyramidEntry[]>([]);
-  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+  const [feedItems, setFeedItems] = useState<Activity[]>([]);
 
   const { showTour, startTour, closeTour } = useOnboardingTour();
 
@@ -335,16 +333,16 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-1.5">
-              {feedItems.map((item) =>
-                item.kind === "session" ? (
-                  <RecentSessionRow
-                    key={`s-${item.data.id}`}
-                    session={item.data as FeedSessionData}
+              {feedItems.map((activity) =>
+                activity.type === "climbing" ? (
+                  <RecentClimbingRow
+                    key={`c-${activity.id}`}
+                    activity={activity}
                   />
                 ) : (
                   <RecentEnduranceRow
-                    key={`e-${item.data.id}`}
-                    activity={item.data as ActivityResponse}
+                    key={`e-${activity.id}`}
+                    activity={activity}
                   />
                 )
               )}
@@ -358,8 +356,8 @@ export default function DashboardPage() {
 
 // ── Dashboard recent activity rows ──────────────────────────────────
 
-function RecentSessionRow({ session }: { session: FeedSessionData }) {
-  const grades = session.ascents
+function RecentClimbingRow({ activity }: { activity: Activity }) {
+  const grades = activity.ascents
     .map((a) => a.grade)
     .filter((g): g is string => g != null)
     .sort();
@@ -367,7 +365,7 @@ function RecentSessionRow({ session }: { session: FeedSessionData }) {
 
   return (
     <Link
-      href={`/crags/${session.crag_id}`}
+      href={`/crags/${activity.crag_id}`}
       className="flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-slate-800/50"
     >
       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-red-900/30">
@@ -376,10 +374,10 @@ function RecentSessionRow({ session }: { session: FeedSessionData }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <span className="truncate text-sm text-slate-100">
-            {session.crag_name ?? "Unknown crag"}
+            {activity.crag_name ?? "Unknown crag"}
           </span>
           <span className="shrink-0 text-xs text-slate-400">
-            {session.ascent_count} route{session.ascent_count !== 1 ? "s" : ""}
+            {activity.ascent_count} route{activity.ascent_count !== 1 ? "s" : ""}
           </span>
           {hardest && (
             <span className="shrink-0 font-mono text-xs text-slate-400">
@@ -388,9 +386,9 @@ function RecentSessionRow({ session }: { session: FeedSessionData }) {
           )}
         </div>
         <div className="text-[11px] text-slate-400">
-          {formatDate(session.date)}
-          {session.linked_activity && (
-            <> &middot; {formatDuration(session.linked_activity.duration_s)}</>
+          {formatDate(activity.date)}
+          {activity.duration_s != null && (
+            <> &middot; {formatDuration(activity.duration_s)}</>
           )}
         </div>
       </div>
@@ -398,7 +396,7 @@ function RecentSessionRow({ session }: { session: FeedSessionData }) {
   );
 }
 
-function RecentEnduranceRow({ activity }: { activity: ActivityResponse }) {
+function RecentEnduranceRow({ activity }: { activity: Activity }) {
   return (
     <div className="flex items-center gap-3 rounded-lg px-2 py-1.5">
       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-blue-900/30">
@@ -409,9 +407,11 @@ function RecentEnduranceRow({ activity }: { activity: ActivityResponse }) {
           <span className="truncate text-sm text-slate-100">
             {activity.name ?? activity.type}
           </span>
-          <span className="shrink-0 text-xs text-slate-400">
-            {formatDuration(activity.duration_s)}
-          </span>
+          {activity.duration_s != null && (
+            <span className="shrink-0 text-xs text-slate-400">
+              {formatDuration(activity.duration_s)}
+            </span>
+          )}
           {activity.distance_m != null && activity.distance_m > 0 && (
             <span className="shrink-0 text-xs text-slate-400">
               {formatDistance(activity.distance_m)}
