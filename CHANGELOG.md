@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.15.7.0] - 2026-03-19
+## [0.15.8.0] - 2026-03-26
 
 ### Changed
 - Unified `Activity` model replaces split `EnduranceActivity` + `ClimbingSession` tables — all activities are now stored in a single table distinguished by `type`/`subtype`
@@ -11,6 +11,9 @@ All notable changes to this project will be documented in this file.
 - `PUT /activities/{id}` endpoint for editing any activity (name, notes, crag assignment with denormalization cascade)
 - `ActivityResponse` now includes climbing fields: `notes`, `crag_id`, `crag_name`, `ascent_count`
 - `sport_category()` helper maps Strava subtypes to categories (mirrors frontend `sportCategory()`)
+
+### Fixed
+- Prevent dangling `crag_id` when updating an activity with a non-existent crag — now skips the crag change instead of writing a broken FK
 
 ### Removed
 - `EnduranceActivity` model and `models/endurance.py`
