@@ -15,6 +15,7 @@ export default function ActivityEditModal({
   onClose,
   onSaved,
 }: ActivityEditModalProps) {
+  const [name, setName] = useState(activity.name ?? "");
   const [notes, setNotes] = useState(activity.notes ?? "");
   const [newCragId, setNewCragId] = useState<number | null>(null);
   const [newCragName, setNewCragName] = useState<string | null>(null);
@@ -38,6 +39,7 @@ export default function ActivityEditModal({
     try {
       const data: Record<string, unknown> = {};
       if (cragChanged) data.crag_id = newCragId;
+      if (!isClimbing && name !== (activity.name ?? "")) data.name = name || null;
       if (notes !== (activity.notes ?? "")) data.notes = notes || null;
 
       if (Object.keys(data).length > 0) {
@@ -68,6 +70,22 @@ export default function ActivityEditModal({
         {error && (
           <div className="mt-3 rounded-lg border border-red-800 bg-red-950/40 px-3 py-2 text-xs text-red-400">
             {error}
+          </div>
+        )}
+
+        {/* Name — climbing activities are named by their crag */}
+        {!isClimbing && (
+          <div className="mt-4">
+            <label className="mb-1 block text-xs font-medium text-slate-400">
+              Name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-emerald-600 outline-none"
+              placeholder="Activity name..."
+            />
           </div>
         )}
 

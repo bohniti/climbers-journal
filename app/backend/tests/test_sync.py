@@ -205,6 +205,16 @@ class TestUpdateActivity:
         assert updated.notes == "Some notes"
 
     @pytest.mark.asyncio
+    async def test_update_name_to_null(self, session):
+        data = _make_activity_data()
+        activity, _ = await upsert_activity(session, data)
+        await session.flush()
+
+        updated = await update_activity(session, activity.id, name=None)
+        assert updated is not None
+        assert updated.name is None
+
+    @pytest.mark.asyncio
     async def test_update_not_found(self, session):
         result = await update_activity(session, 99999, name="nope")
         assert result is None
