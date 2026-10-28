@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { updateAscent, type FeedSessionAscent } from "@/lib/api";
+import { updateAscent, type ActivityAscent } from "@/lib/api";
 import { tickTypeLabel } from "@/lib/constants";
 
 const TICK_TYPES = [
@@ -15,7 +15,7 @@ const TICK_TYPES = [
 ];
 
 interface AscentEditModalProps {
-  ascent: FeedSessionAscent;
+  ascent: ActivityAscent;
   onClose: () => void;
   onSaved: () => void;
 }

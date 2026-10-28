@@ -38,4 +38,7 @@ uv run alembic upgrade head
 
 echo ""
 echo "Done. Database is clean. Backend and frontend are stopped."
-echo "Run 'cd app/backend && uv run fastapi dev climbers_journal/main.py' to start again."
+echo ""
+echo "Next steps:"
+echo "  1. Start backend:  cd app/backend && uv run fastapi dev climbers_journal/main.py"
+echo "  2. Re-import data: POST /sync/intervals + POST /import/climbing-csv"

@@ -11,9 +11,9 @@ from climbers_journal.models.climbing import (
     normalize_name,
     suggest_grade_system,
 )
-from climbers_journal.services.climbing import (
+from climbers_journal.services.activity import (
     create_ascent,
-    create_climbing_session,
+    create_climbing_activity,
     create_or_find_area,
     create_or_find_crag,
     create_or_find_route,
@@ -311,7 +311,7 @@ class TestAscentCrud:
 
 class TestClimbingSession:
     async def test_create_session(self, session):
-        result = await create_climbing_session(
+        result = await create_climbing_activity(
             session,
             crag_name="Frankenjura",
             crag_country="Germany",
@@ -345,10 +345,10 @@ class TestClimbingSession:
                 "date": "2026-03-10",
             },
         ]
-        await create_climbing_session(
+        await create_climbing_activity(
             session, crag_name="Frankenjura", ascents_data=data
         )
-        result = await create_climbing_session(
+        result = await create_climbing_activity(
             session, crag_name="Frankenjura", ascents_data=data
         )
         assert result["crag_created"] is False
@@ -356,7 +356,7 @@ class TestClimbingSession:
         assert result["ascents_skipped"] == 1
 
     async def test_gym_session(self, session):
-        result = await create_climbing_session(
+        result = await create_climbing_activity(
             session,
             crag_name="Boulderhalle Wien",
             venue_type=VenueType.indoor_gym,

@@ -34,6 +34,13 @@ Deferred work from plan reviews. Each item has context so it can be picked up in
 **Depends on:** Weekly chart filter buttons from plan 0004 Step 3
 **Context:** From CEO review of plan 0004. Deferred to avoid over-complicating the chart in v1.
 
+### sport_category() Mapping Sync
+**What:** Keep `_SUBTYPE_CATEGORY` in `models/activity.py` and `SPORT_TYPES` in `constants.ts` in sync when adding new sport types.
+**Why:** Python backend and TypeScript frontend each have their own Strava subtype → category mapping. If they drift, activities could be categorized differently on the backend vs frontend.
+**Effort:** S (manual check when adding new sport types)
+**Depends on:** Plan 0005 (unified activity model)
+**Context:** From plan 0005 edge cases. Two copies of the same mapping — one in Python, one in TypeScript.
+
 ## P3 — Nice to Have
 
 ### Training Consistency Heatmap

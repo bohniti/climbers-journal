@@ -9,8 +9,8 @@ import {
   fetchCragSessions,
   type CragResponse,
   type CragStatsResponse,
-  type CragSessionResponse,
-  type FeedSessionAscent,
+  type Activity,
+  type ActivityAscent,
 } from "@/lib/api";
 import {
   TICK_COLORS,
@@ -19,9 +19,8 @@ import {
   formatDate,
 } from "@/lib/constants";
 import ActivityIcon from "@/components/ActivityIcon";
-import SessionEditModal from "@/components/SessionEditModal";
+import ActivityEditModal from "@/components/ActivityEditModal";
 import AscentEditModal from "@/components/AscentEditModal";
-import type { FeedSessionData } from "@/lib/api";
 
 const PAGE_SIZE = 20;
 
@@ -31,7 +30,7 @@ export default function CragDetailPage() {
 
   const [crag, setCrag] = useState<CragResponse | null>(null);
   const [stats, setStats] = useState<CragStatsResponse | null>(null);
-  const [sessions, setSessions] = useState<CragSessionResponse[]>([]);
+  const [sessions, setSessions] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sessionOffset, setSessionOffset] = useState(0);
@@ -171,10 +170,10 @@ export default function CragDetailPage() {
         )}
 
         <div className="space-y-2">
-          {sessions.map((session) => (
+          {sessions.map((activity) => (
             <SessionCard
-              key={session.id}
-              session={session}
+              key={activity.id}
+              activity={activity}
               onRefresh={() => {
                 loadSessions(0, false);
                 // Refresh stats too since crag may have changed
@@ -220,16 +219,16 @@ function StatItem({ label, value }: { label: string; value: string }) {
 type ExpandLevel = "collapsed" | "summary" | "routes";
 
 function SessionCard({
-  session,
+  activity,
   onRefresh,
 }: {
-  session: CragSessionResponse;
+  activity: Activity;
   onRefresh: () => void;
 }) {
   const defaultLevel: ExpandLevel =
-    session.ascent_count > 10 ? "summary" : "collapsed";
+    activity.ascent_count > 10 ? "summary" : "collapsed";
   const [expand, setExpand] = useState<ExpandLevel>(defaultLevel);
-  const [editSession, setEditSession] = useState(false);
+  const [editActivity, setEditActivity] = useState(false);
 
   const cycleExpand = () => {
     if (expand === "collapsed") setExpand("summary");
@@ -237,7 +236,7 @@ function SessionCard({
     else setExpand("collapsed");
   };
 
-  const ascents = session.ascents;
+  const ascents = activity.ascents;
   const grades = ascents
     .map((a) => a.grade)
     .filter((g): g is string => g != null)
@@ -256,20 +255,6 @@ function SessionCard({
     tickBreakdown[a.tick_type] = (tickBreakdown[a.tick_type] || 0) + 1;
   }
 
-  const linkedDuration = session.linked_activity?.duration_s;
-
-  // Adapt CragSessionResponse to FeedSessionData for the modal
-  const sessionForModal: FeedSessionData = {
-    id: session.id,
-    date: session.date,
-    crag_id: session.crag_id,
-    crag_name: session.crag_name,
-    notes: session.notes,
-    linked_activity: session.linked_activity,
-    ascents: session.ascents,
-    ascent_count: session.ascent_count,
-  };
-
   return (
     <div className="rounded-xl border border-slate-700 bg-slate-900 text-left transition-colors hover:border-slate-600">
       <button type="button" onClick={cycleExpand} className="w-full px-4 py-3">
@@ -280,18 +265,18 @@ function SessionCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="truncate text-sm font-medium text-slate-100">
-                {formatDate(session.date)}
+                {formatDate(activity.date)}
               </span>
-              {linkedDuration != null && (
+              {activity.duration_s != null && (
                 <span className="shrink-0 rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">
-                  {formatDuration(linkedDuration)}
+                  {formatDuration(activity.duration_s)}
                 </span>
               )}
             </div>
             <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-400">
               <span>
-                {session.ascent_count} route
-                {session.ascent_count !== 1 ? "s" : ""}
+                {activity.ascent_count} route
+                {activity.ascent_count !== 1 ? "s" : ""}
               </span>
               {hardestGrade && (
                 <>
@@ -306,7 +291,7 @@ function SessionCard({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              setEditSession(true);
+              setEditActivity(true);
             }}
             className="shrink-0 rounded-lg p-1.5 text-slate-500 hover:bg-slate-800 hover:text-slate-300"
             title="Edit session"
@@ -334,7 +319,7 @@ function SessionCard({
         <div className="border-t border-slate-800 px-4 py-2.5">
           <div className="flex items-center justify-between text-xs text-slate-400">
             <span>
-              {session.ascent_count} routes
+              {activity.ascent_count} routes
               {hardestGrade ? ` \u00B7 hardest ${hardestGrade}` : ""}
               {` \u00B7 ${sends.length} send${sends.length !== 1 ? "s" : ""}`}
               {attempts.length > 0
@@ -350,23 +335,23 @@ function SessionCard({
             >
               {expand === "routes"
                 ? "Hide routes"
-                : `Show all ${session.ascent_count} routes`}
+                : `Show all ${activity.ascent_count} routes`}
             </button>
           </div>
 
-          {session.linked_activity && (
+          {(activity.avg_hr != null || activity.max_hr != null) && (
             <div className="mt-1.5 flex gap-3 text-[11px] text-slate-500">
-              {session.linked_activity.avg_hr != null && (
-                <span>Avg HR: {session.linked_activity.avg_hr} bpm</span>
+              {activity.avg_hr != null && (
+                <span>Avg HR: {activity.avg_hr} bpm</span>
               )}
-              {session.linked_activity.max_hr != null && (
-                <span>Max HR: {session.linked_activity.max_hr} bpm</span>
+              {activity.max_hr != null && (
+                <span>Max HR: {activity.max_hr} bpm</span>
               )}
             </div>
           )}
 
-          {session.notes && (
-            <p className="mt-1.5 text-xs text-slate-400">{session.notes}</p>
+          {activity.notes && (
+            <p className="mt-1.5 text-xs text-slate-400">{activity.notes}</p>
           )}
         </div>
       )}
@@ -379,13 +364,13 @@ function SessionCard({
         </div>
       )}
 
-      {/* Session edit modal */}
-      {editSession && (
-        <SessionEditModal
-          session={sessionForModal}
-          onClose={() => setEditSession(false)}
+      {/* Activity edit modal */}
+      {editActivity && (
+        <ActivityEditModal
+          activity={activity}
+          onClose={() => setEditActivity(false)}
           onSaved={() => {
-            setEditSession(false);
+            setEditActivity(false);
             onRefresh();
           }}
         />
@@ -398,7 +383,7 @@ function AscentRow({
   ascent,
   onRefresh,
 }: {
-  ascent: FeedSessionAscent;
+  ascent: ActivityAscent;
   onRefresh: () => void;
 }) {
   const [editing, setEditing] = useState(false);

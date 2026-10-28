@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.15.9.0] - 2026-03-26
+
+### Changed
+- Unified `Activity` model replaces split `EnduranceActivity` + `ClimbingSession` tables — all activities are now stored in a single table distinguished by `type`/`subtype`
+- Squashed all Alembic migrations into one clean initial migration (`0001_initial`)
+- Renamed `services/climbing.py` to `services/activity.py` to reflect unified model
+- `PUT /activities/{id}` endpoint with EDITABLE_FIELDS whitelist (name, notes, crag_id, crag_name) and denormalization cascade
+- `ActivityResponse` now includes climbing fields: `notes`, `crag_id`, `crag_name`, `ascent_count`
+- `sport_category()` helper maps Strava subtypes to categories (mirrors frontend `sportCategory()`)
+- `get_or_create_climbing_activity` and `create_climbing_activity` accept `source` parameter (propagated from CSV import)
+- `get_climbing_activity` now filters by `type == "climbing"` for safety
+- Calendar endpoint uses `coalesce(subtype, type)` for endurance activities with null subtype
+- Sync `_parse_activity` returns `None` for `duration_s` when missing (instead of 0)
+- Frontend: `SessionEditModal` replaced by unified `ActivityEditModal`, API client simplified
+
+### Fixed
+- Prevent dangling `crag_id` when updating an activity with a non-existent crag — now skips the crag change instead of writing a broken FK
+- Cascade null crag to ascents when clearing crag_id on a climbing activity
+
+### Removed
+- `EnduranceActivity` model and `models/endurance.py`
+- `ClimbingSession` model — replaced by `Activity(type="climbing")`
+- Activity linking (`linked_activity_id`) — no longer needed with unified model
+- Five individual Alembic migrations (squashed into one)
+- `SessionEditModal` component (replaced by `ActivityEditModal`)
+
 ## [0.15.6.0] - 2026-03-17
 
 ### Added

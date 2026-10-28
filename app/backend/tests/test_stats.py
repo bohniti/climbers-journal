@@ -4,8 +4,8 @@ from datetime import date, timedelta
 
 import pytest
 
+from climbers_journal.models.activity import Activity, ActivitySource
 from climbers_journal.models.climbing import TickType, VenueType
-from climbers_journal.models.endurance import ActivitySource, EnduranceActivity
 from climbers_journal.routers.stats import (
     _build_climbing_stats,
     _build_endurance_stats,
@@ -15,7 +15,7 @@ from climbers_journal.routers.stats import (
     get_calendar,
     get_weekly,
 )
-from climbers_journal.services.climbing import create_climbing_session
+from climbers_journal.services.activity import create_climbing_activity
 
 
 # ── Grade Pyramid ─────────────────────────────────────────────────────
@@ -30,7 +30,7 @@ async def test_grade_pyramid_empty(session):
 @pytest.mark.asyncio
 async def test_grade_pyramid_with_sends(session):
     today = date.today()
-    await create_climbing_session(
+    await create_climbing_activity(
         session,
         crag_name="Test Crag",
         crag_country="Germany",
@@ -61,7 +61,7 @@ async def test_grade_pyramid_with_sends(session):
 @pytest.mark.asyncio
 async def test_grade_pyramid_venue_filter(session):
     today = date.today()
-    await create_climbing_session(
+    await create_climbing_activity(
         session,
         crag_name="Outdoor Crag",
         crag_country="Germany",
@@ -70,7 +70,7 @@ async def test_grade_pyramid_venue_filter(session):
             {"route_name": "Outdoor Route", "grade": "7a", "tick_type": TickType.redpoint, "date": today},
         ],
     )
-    await create_climbing_session(
+    await create_climbing_activity(
         session,
         crag_name="Indoor Gym",
         crag_country="Germany",
@@ -94,7 +94,7 @@ async def test_grade_pyramid_venue_filter(session):
 async def test_grade_pyramid_period_filter(session):
     today = date.today()
     old = date(today.year - 1, 1, 15)
-    await create_climbing_session(
+    await create_climbing_activity(
         session,
         crag_name="Crag",
         crag_country="Germany",
@@ -121,7 +121,7 @@ async def test_climbing_stats(session):
     week_ago = today - timedelta(days=7)
     month_ago = today - timedelta(days=30)
 
-    await create_climbing_session(
+    await create_climbing_activity(
         session,
         crag_name="Crag",
         crag_country="Germany",
@@ -159,7 +159,7 @@ async def test_endurance_stats_empty(session):
 @pytest.mark.asyncio
 async def test_recent_climbing(session):
     today = date.today()
-    await create_climbing_session(
+    await create_climbing_activity(
         session,
         crag_name="Crag",
         crag_country="Germany",
@@ -200,7 +200,7 @@ async def test_calendar_with_climbing(session):
     today = date.today()
     month_str = f"{today.year}-{today.month:02d}"
 
-    await create_climbing_session(
+    await create_climbing_activity(
         session,
         crag_name="Test Crag",
         crag_country="Germany",
@@ -226,10 +226,11 @@ async def test_calendar_with_endurance(session):
     today = date.today()
     month_str = f"{today.year}-{today.month:02d}"
 
-    activity = EnduranceActivity(
+    activity = Activity(
         intervals_id="test-1",
         date=today,
-        type="Run",
+        type="run",
+        subtype="Run",
         name="Morning Run",
         duration_s=3600,
         distance_m=10000,
@@ -252,7 +253,7 @@ async def test_calendar_mixed_venue_types(session):
     today = date.today()
     month_str = f"{today.year}-{today.month:02d}"
 
-    await create_climbing_session(
+    await create_climbing_activity(
         session,
         crag_name="Outdoor Crag",
         crag_country="Germany",
@@ -261,7 +262,7 @@ async def test_calendar_mixed_venue_types(session):
             {"route_name": "R1", "grade": "7a", "tick_type": TickType.redpoint, "date": today},
         ],
     )
-    await create_climbing_session(
+    await create_climbing_activity(
         session,
         crag_name="Indoor Gym",
         crag_country="Germany",
@@ -296,7 +297,7 @@ async def test_weekly_mixed_data(session):
     today = date.today()
     monday = today - timedelta(days=today.weekday())
 
-    await create_climbing_session(
+    await create_climbing_activity(
         session,
         crag_name="Crag",
         crag_country="Germany",
@@ -306,10 +307,11 @@ async def test_weekly_mixed_data(session):
             {"route_name": "R2", "grade": "6c", "tick_type": TickType.flash, "date": monday},
         ],
     )
-    activity = EnduranceActivity(
+    activity = Activity(
         intervals_id="test-weekly-1",
         date=monday,
-        type="Run",
+        type="run",
+        subtype="Run",
         name="Morning Run",
         duration_s=3600,
         source=ActivitySource.intervals_icu,
@@ -339,7 +341,7 @@ async def test_weekly_climbing_only_day(session):
     last_monday = today - timedelta(days=today.weekday() + 7)
     climb_day = last_monday + timedelta(days=2)  # Wednesday of last week
 
-    await create_climbing_session(
+    await create_climbing_activity(
         session,
         crag_name="Crag",
         crag_country="Germany",
@@ -365,7 +367,7 @@ async def test_weekly_session_streak(session):
     # Create sessions on 3 different days this month
     for i in range(3):
         d = month_start + timedelta(days=i)
-        await create_climbing_session(
+        await create_climbing_activity(
             session,
             crag_name="Crag",
             crag_country="Germany",
