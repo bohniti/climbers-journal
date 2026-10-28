@@ -2,7 +2,7 @@
 
 import datetime
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -63,6 +63,25 @@ async def trigger_sync(
         newest=body.newest,
     )
     return result
+
+
+class ActivityUpdate(BaseModel):
+    name: str | None = None
+
+
+@router.put("/activities/{activity_id}", response_model=ActivityResponse)
+async def update_activity(
+    activity_id: int,
+    body: ActivityUpdate,
+    session: AsyncSession = Depends(get_session),
+):
+    data = body.model_dump(exclude_unset=True)
+    if not data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    try:
+        return await sync_svc.update_activity(session, activity_id, data)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Activity not found")
 
 
 @router.get("/activities", response_model=list[ActivityResponse])

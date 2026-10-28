@@ -194,3 +194,25 @@ async def list_activities(
         stmt.order_by(EnduranceActivity.date.desc()).offset(offset).limit(limit)  # type: ignore[union-attr]
     )
     return list(result.all())
+
+
+async def update_activity(
+    session: AsyncSession,
+    activity_id: int,
+    data: dict,
+) -> EnduranceActivity:
+    """Update an endurance activity's editable fields (name)."""
+    result = await session.exec(
+        select(EnduranceActivity).where(EnduranceActivity.id == activity_id)
+    )
+    activity = result.one_or_none()
+    if activity is None:
+        raise ValueError(f"Activity {activity_id} not found")
+
+    for key, value in data.items():
+        setattr(activity, key, value)
+
+    session.add(activity)
+    await session.commit()
+    await session.refresh(activity)
+    return activity

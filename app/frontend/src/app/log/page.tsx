@@ -20,6 +20,7 @@ import {
 import ActivityIcon from "@/components/ActivityIcon";
 import SessionEditModal from "@/components/SessionEditModal";
 import AscentEditModal from "@/components/AscentEditModal";
+import EnduranceEditModal from "@/components/EnduranceEditModal";
 
 // ── Filter state ──────────────────────────────────────────────────────
 
@@ -197,6 +198,10 @@ export default function LogPage() {
                 <EnduranceCard
                   key={`e-${item.data.id}`}
                   activity={item.data}
+                  onRefresh={() => {
+                    setOffset(0);
+                    fetchItems(0, false);
+                  }}
                 />
               )
             )}
@@ -274,9 +279,16 @@ function ClimbingSessionCard({
   return (
     <div className="rounded-xl border border-slate-700 bg-slate-900 text-left transition-colors hover:border-slate-600">
       {/* Collapsed header — always visible */}
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={cycleExpand}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            cycleExpand();
+          }
+        }}
         className="w-full px-4 py-3"
       >
         <div className="flex items-center gap-3">
@@ -340,7 +352,7 @@ function ClimbingSessionCard({
             ))}
           </div>
         </div>
-      </button>
+      </div>
 
       {/* Summary level */}
       {(expand === "summary" || expand === "routes") && (
@@ -472,41 +484,73 @@ function AscentRow({
 
 // ── Endurance Card ────────────────────────────────────────────────────
 
-function EnduranceCard({ activity }: { activity: ActivityResponse }) {
+function EnduranceCard({
+  activity,
+  onRefresh,
+}: {
+  activity: ActivityResponse;
+  onRefresh: () => void;
+}) {
   const [expanded, setExpanded] = useState(false);
+  const [editing, setEditing] = useState(false);
+
+  const toggleExpand = () => setExpanded((p) => !p);
 
   return (
-    <button
-      type="button"
-      onClick={() => setExpanded((p) => !p)}
-      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-left transition-colors hover:border-slate-600"
-    >
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-900/30">
-          <ActivityIcon category={sportCategory(activity.type)} size="md" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="truncate text-sm font-medium text-slate-100">
-              {activity.name ?? activity.type}
-            </span>
-            <span className="shrink-0 rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">
-              {formatDuration(activity.duration_s)}
-            </span>
-            {activity.distance_m != null && activity.distance_m > 0 && (
-              <span className="shrink-0 text-xs text-slate-400">
-                {formatDistance(activity.distance_m)}
+    <div className="rounded-xl border border-slate-700 bg-slate-900 text-left transition-colors hover:border-slate-600">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={toggleExpand}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggleExpand();
+          }
+        }}
+        className="w-full px-4 py-3"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-900/30">
+            <ActivityIcon category={sportCategory(activity.type)} size="md" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="truncate text-sm font-medium text-slate-100">
+                {activity.name ?? activity.type}
               </span>
-            )}
+              <span className="shrink-0 rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">
+                {formatDuration(activity.duration_s)}
+              </span>
+              {activity.distance_m != null && activity.distance_m > 0 && (
+                <span className="shrink-0 text-xs text-slate-400">
+                  {formatDistance(activity.distance_m)}
+                </span>
+              )}
+            </div>
+            <div className="mt-0.5 text-xs text-slate-400">
+              {activity.type} &middot; {formatDate(activity.date)}
+            </div>
           </div>
-          <div className="mt-0.5 text-xs text-slate-400">
-            {activity.type} &middot; {formatDate(activity.date)}
-          </div>
+          {/* Edit button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditing(true);
+            }}
+            className="shrink-0 rounded-lg p-1.5 text-slate-500 hover:bg-slate-800 hover:text-slate-300"
+            title="Edit activity"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+            </svg>
+          </button>
         </div>
       </div>
 
       {expanded && (
-        <div className="mt-3 border-t border-slate-800 pt-3 text-xs text-slate-400">
+        <div className="border-t border-slate-800 px-4 py-3 text-xs text-slate-400">
           <div className="grid grid-cols-2 gap-x-4 gap-y-1">
             {activity.elevation_gain_m != null && (
               <>
@@ -535,6 +579,17 @@ function EnduranceCard({ activity }: { activity: ActivityResponse }) {
           </div>
         </div>
       )}
-    </button>
+
+      {editing && (
+        <EnduranceEditModal
+          activity={activity}
+          onClose={() => setEditing(false)}
+          onSaved={() => {
+            setEditing(false);
+            onRefresh();
+          }}
+        />
+      )}
+    </div>
   );
 }

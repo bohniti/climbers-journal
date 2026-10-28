@@ -136,6 +136,14 @@ Build edit modals for climbing sessions and ascents. Expand backend edit surface
 - [x] Add edit buttons to `ClimbingSessionCard` and route rows in log page
 - [x] Add `updateSession` and update `updateAscent` in `api.ts`
 
+**Post-implementation fixes (from QA):**
+- [x] **Fix nested `<button>` hydration error** — `ClimbingSessionCard` wraps the header in a `<button>` for expand/collapse (line 277), and the edit `<button>` (line 316) is nested inside it. HTML forbids `<button>` inside `<button>`, causing a React hydration error. **Fix:** change the outer `<button>` to a `<div>` with `role="button"`, `tabIndex={0}`, `onClick`, and `onKeyDown` (Enter/Space) for accessibility.
+- [x] **Fix `EnduranceCard` same pattern** — `EnduranceCard` uses a `<button>` as its outer wrapper (line 479). Change to `<div>` with click handler to match, and to allow adding an edit button inside.
+- [x] **Add edit button to `EnduranceCard`** — endurance activities currently have no edit UI. Added `PUT /activities/{id}` backend endpoint (name field), `EnduranceEditModal` component, and edit button matching the `ClimbingSessionCard` pattern.
+
+**Lessons learned:**
+> The edit button was placed _inside_ the outer `<button>` element that handles expand/collapse. This violates HTML spec (`<button>` cannot contain `<button>`) and causes React hydration errors in Next.js. The root cause: the card's expand/collapse area was implemented as a `<button>` for accessibility, but when interactive children (edit buttons) were added inside it, the nesting became invalid. **Takeaway:** when a card needs both a clickable expand area AND interactive child elements (buttons, links), use a `<div role="button">` for the outer container instead of a `<button>`. Always validate that interactive elements are not nested inside other interactive elements.
+
 **Files:** `app/backend/climbers_journal/routers/climbing.py`, `app/backend/climbers_journal/services/climbing.py`, `app/frontend/src/components/SessionEditModal.tsx` (new), `app/frontend/src/components/AscentEditModal.tsx` (new), `app/frontend/src/components/CragCombobox.tsx` (new), `app/frontend/src/app/log/page.tsx`, `app/frontend/src/lib/api.ts`
 
 ### Step 3: Dashboard overhaul — weekly chart with filter buttons
